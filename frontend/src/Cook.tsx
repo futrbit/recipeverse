@@ -1,5 +1,5 @@
-// C:\Users\leebu\Desktop\recipeverse\frontend\src\Cook.tsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './Cook.css';
 
 const Cook: React.FC = () => {
@@ -15,7 +15,8 @@ const Cook: React.FC = () => {
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Ingredient categories
+  const navigate = useNavigate();
+
   const meats = ['Chicken', 'Beef', 'Fish', 'Pork', 'Lamb', 'Shrimp', 'Tofu', 'Tempeh', 'Eggs'];
   const vegetables = ['Carrot', 'Spinach', 'Onion', 'Tomato', 'Bell Pepper', 'Zucchini', 'Cauliflower', 'Broccoli'];
   const spices = ['Garlic', 'Ginger', 'Basil', 'Oregano', 'Thyme', 'Cumin', 'Turmeric', 'Paprika', 'Chili Flakes'];
@@ -23,7 +24,6 @@ const Cook: React.FC = () => {
   const cuisines = ['Random', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Mediterranean', 'Thai', 'French', 'Japanese'];
   const dietaryOptions = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'];
 
-  // Fetch user info on mount
   useEffect(() => {
     fetch('/api/user-info', { credentials: 'include' })
       .then((res) => {
@@ -131,6 +131,10 @@ const Cook: React.FC = () => {
     navigator.clipboard.writeText('https://recipeverse.com').then(() => {
       alert('Link copied to clipboard!');
     });
+  };
+
+  const goHome = () => {
+    navigate('/');
   };
 
   return (
@@ -277,15 +281,16 @@ const Cook: React.FC = () => {
       </div>
 
       {recipe && (
-  <div className="rv-share-section">
-    <h3>📣 Share your dish!</h3>
-    <button onClick={shareOnTwitter}>Share on X</button>
-    <button onClick={shareOnWhatsApp}>WhatsApp</button>
-    <button onClick={copyToClipboard}>Copy Link</button>
-    <button onClick={goHome} style={{ marginLeft: '10px' }}>Home</button>
-  </div>
-)}
-
-
+        <div className="rv-share-section">
+          <h3>📣 Share your dish!</h3>
+          <button onClick={shareOnTwitter}>Share on X</button>
+          <button onClick={shareOnWhatsApp}>WhatsApp</button>
+          <button onClick={copyToClipboard}>Copy Link</button>
+          <button onClick={goHome} style={{ marginLeft: '10px' }}>Home</button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default Cook;

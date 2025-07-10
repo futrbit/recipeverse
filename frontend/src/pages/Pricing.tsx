@@ -1,11 +1,10 @@
-// frontend/src/pages/Pricing.tsx
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './Pricing.css';
+import '../Pricing.css'; // Fixed import path
 
-const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY || '');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
 
 interface Plan {
   plan: string;
@@ -31,7 +30,7 @@ const Pricing: React.FC = () => {
   useEffect(() => {
     const fetchPricing = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/pricing', {
+        const response = await axios.get('/pricing', {
           withCredentials: true,
         });
         setPlans(response.data.plans);
@@ -52,7 +51,7 @@ const Pricing: React.FC = () => {
         throw new Error('Stripe failed to load.');
       }
       const response = await axios.post(
-        'http://localhost:5000/stripe/create-checkout-session',
+        '/stripe/create-checkout-session',
         { plan },
         { withCredentials: true }
       );

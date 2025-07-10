@@ -2,22 +2,13 @@ services:
   - type: web
     name: recipeverse-backend
     env: python
-    region: oregon  # or change to your preferred region
-    buildCommand: |
-      pip install -r requirements.txt && flask --app backend.app db upgrade
-    startCommand: gunicorn backend.app:app --bind 0.0.0.0:10000
+    buildCommand: "pip install -r requirements.txt && flask --app backend.app db upgrade"
+    startCommand: "gunicorn backend.app:app"
     envVars:
-      - key: FLASK_ENV
-        value: production
       - key: FLASK_APP
         value: backend.app
       - key: SECRET_KEY
-        value: your-secret-key-here
-      - key: STRIPE_SECRET_KEY
-        value: your-stripe-key-here
+        value: your_secret
       - key: OPENAI_API_KEY
-        value: your-openai-key-here
-      - key: GOOGLE_CLIENT_ID
-        value: your-google-client-id
-      - key: GOOGLE_CLIENT_SECRET
-        value: your-google-client-secret
+        value: your_openai_key
+      # ... add all your other environment variables
