@@ -1,108 +1,49 @@
-import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
-import '../Pricing.css'; // Fixed import path
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || '');
-
-interface Plan {
-  plan: string;
-  price: number;
-  credits: string | number;
-  features: string[];
-}
-
-interface User {
-  username: string;
-  subscription_status: string;
-  stripe_customer_id: string | null;
-  api_calls: number;
-}
-
-const Pricing: React.FC = () => {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchPricing = async () => {
-      try {
-        const response = await axios.get('/pricing', {
-          withCredentials: true,
-        });
-        setPlans(response.data.plans);
-        setUser(response.data.user);
-        setLoading(false);
-      } catch (err: any) {
-        setError(err.response?.data?.error || 'Failed to load pricing plans.');
-        setLoading(false);
-      }
-    };
-    fetchPricing();
-  }, []);
-
-  const handleSubscribe = async (plan: string) => {
-    try {
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Stripe failed to load.');
-      }
-      const response = await axios.post(
-        '/stripe/create-checkout-session',
-        { plan },
-        { withCredentials: true }
-      );
-      const sessionId = response.data.id;
-      const { error } = await stripe.redirectToCheckout({ sessionId });
-      if (error) {
-        setError(error.message || 'Failed to initiate checkout.');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.error || 'Failed to start subscription.');
-    }
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="error">{error}</div>;
-  }
-
+export default function Pricing() {
   return (
-    <div className="pricing-container">
-      <h1>Pricing Plans</h1>
-      <p>Welcome, {user?.username}! Current plan: {user?.subscription_status}</p>
-      <div className="plans">
-        {plans.map((plan) => (
-          <div key={plan.plan} className="plan-card">
-            <h2>{plan.plan}</h2>
-            <p className="price">
-              ${plan.price.toFixed(2)} {plan.plan.includes('Yearly') ? '/year' : plan.price === 0 ? '' : '/month'}
-            </p>
-            <p>Credits: {plan.credits}</p>
-            <ul>
-              {plan.features.map((feature, index) => (
-                <li key={index}>{feature}</li>
-              ))}
-            </ul>
-            {user?.subscription_status === 'premium' && plan.plan !== 'Free' ? (
-              <button disabled>Subscribed</button>
-            ) : plan.plan === 'Free' ? (
-              <button disabled>Current Plan</button>
-            ) : (
-              <button onClick={() => handleSubscribe(plan.plan)}>Subscribe</button>
-            )}
-          </div>
-        ))}
-      </div>
-      <button onClick={() => navigate('/dashboard')}>Back to Dashboard</button>
-    </div>
+    <>
+      <header style={headerStyle}>
+        <img src="/static/logo.png" alt="RecipeVerse Logo" style={{ height: 50 }} />
+        <nav>
+          <Link to="/">Home</Link>
+          <Link to="/login">Log In</Link>
+          <Link to="/signup">Sign Up</Link>
+        </nav>
+      </header>
+      <main style={containerStyle}>
+        <h1>Subscription Plans</h1>
+        <p>Upgrade to Premium and enjoy unlimited recipe generation with no credit limits.</p>
+        <div style={planStyle}>
+          <h2>Free</h2>
+          <ul>
+            <li>3 recipe credits per day</li>
+            <li>Basic recipe generation</li>
+            <li>Access to Cookbook</li>
+          </ul>
+          <p style={{ fontWeight: 'bold' }}>Free</p>
+        </div>
+        <div style={planStyle}>
+          <h2>Premium</h2>
+          <ul>
+            <li>Unlimited recipe generation</li>
+            <li>Priority support</li>
+            <li>Exclusive recipes and features</li>
+          </ul>
+          <p style={{ fontWeight: 'bold' }}>$5.99/month</p>
+          <Link to="/checkout" style={btnStyle}>Upgrade Now</Link>
+        </div>
+      </main>
+      <footer style={footerStyle}>Made with ❤️ by RecipeVerse · © 2025</footer>
+    </>
   );
-};
+}
 
-export default Pricing;
+const planStyle = {
+  border: '1px solid #ccc',
+  borderRadius: 8,
+  padding: '1rem',
+  marginBottom: '1rem',
+  maxWidth: 400,
+};
