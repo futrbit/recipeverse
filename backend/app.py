@@ -16,8 +16,12 @@ import stripe
 # Load environment variables
 load_dotenv()
 
+# Clean FRONTEND_URL to avoid newline issues
+frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-xiuo.onrender.com").strip()
+print(f"Using FRONTEND_URL: {repr(frontend_url)}")
+
 app = Flask(__name__, instance_relative_config=True)
-CORS(app, supports_credentials=True, origins=[os.environ.get('FRONTEND_URL', 'https://recipeverse-xiuo.onrender.com')])
+CORS(app, supports_credentials=True, origins=[frontend_url])
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
@@ -26,8 +30,6 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 instance_path = os.path.join(basedir, 'instance')
 os.makedirs(instance_path, exist_ok=True)
 db_path = os.path.join(instance_path, 'recipeverse.db')
-
-# Fix for Windows paths in SQLALCHEMY_DATABASE_URI
 sqlite_uri = f"sqlite:///{db_path.replace('\\', '/')}"
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', sqlite_uri)
@@ -45,16 +47,15 @@ logger.addHandler(file_handler)
 from extensions import db
 from models import User, Recipe
 
-
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# Initialize Flask-Login
+# Flask-Login
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
-# Initialize OAuth
+# OAuth
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
@@ -64,7 +65,7 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# Initialize Stripe and OpenAI
+# Stripe and OpenAI
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
@@ -79,7 +80,7 @@ def load_user(user_id):
         logger.error(f"Error in load_user: {e}")
         return None
 
-# Serve React frontend
+# Serve frontend
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
@@ -88,7 +89,6 @@ def serve_frontend(path):
         return send_from_directory(dist_dir, path)
     return send_from_directory(dist_dir, 'index.html')
 
-# API Routes
 @app.route('/api/user-info')
 @login_required
 def user_info():
@@ -150,8 +150,8 @@ def create_checkout_session():
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url=f"{os.environ.get('FRONTEND_URL')}/dashboard?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{os.environ.get('FRONTEND_URL')}/pricing",
+            success_url=f"{frontend_url}/dashboard?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{frontend_url}/pricing",
         )
         return jsonify({'id': session.id})
     except Exception as e:
@@ -212,7 +212,7 @@ def generate_recipe():
                 logger.info(f"Credits reset to 3 for user {user.username} on {now.date()}")
             except Exception as e:
                 db.session.rollback()
-                logger.error(f"Failed to reset credits for user {user.username}: {e}")
+                logger.error(f"Failed to reset credits: {e}")
                 return jsonify({"error": "db_error", "message": "Failed to reset credits."}), 500
 
         if user.credits <= 0:
@@ -225,11 +225,11 @@ def generate_recipe():
             user.credits -= 1
             user.api_calls += 1
             db.session.commit()
-            logger.info(f"Credit deducted for user {user.username}. Remaining: {user.credits}, API calls: {user.api_calls}")
+            logger.info(f"Credit deducted for {user.username}. Remaining: {user.credits}")
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Failed to deduct credit or increment api_calls for user {user.username}: {e}")
-            return jsonify({"error": "db_error", "message": "Failed to update credits or API calls."}), 500
+            logger.error(f"Credit decrement failed: {e}")
+            return jsonify({"error": "db_error", "message": "Failed to update credits."}), 500
 
     data = request.get_json() or {}
     ingredients = data.get('ingredients', [])
@@ -245,23 +245,21 @@ def generate_recipe():
             try:
                 user.credits += 1
                 db.session.commit()
-                logger.info(f"Credit refunded for user {user.username} due to invalid input. Remaining: {user.credits}")
-            except Exception as e:
-                logger.error(f"Failed to refund credit for user {user.username}: {e}")
+            except:
+                pass
         return jsonify({"error": "invalid_input", "message": "At least one ingredient is required."}), 400
 
     prompt = (
-        f"Generate an easy {cuisine} recipe for {portions} portions with the following ingredients: {', '.join(ingredients)}. "
-        f"Dietary preferences: {', '.join(dietary) or 'None'}. Spice level: {spice_level}/5. "
-        f"Cook time: {cook_time} minutes. Difficulty: {difficulty}. "
-        f"Provide a title, ingredient list with quantities, step-by-step instructions, and approximate nutritional data per serving."
+        f"Generate an easy {cuisine} recipe for {portions} portions with: {', '.join(ingredients)}. "
+        f"Dietary: {', '.join(dietary) or 'None'}, spice: {spice_level}/5, time: {cook_time} min, difficulty: {difficulty}. "
+        f"Include title, ingredients w/ amounts, steps, and per-serving nutrition."
     )
 
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a helpful recipe assistant. Format recipes with a title, ingredients with quantities, instructions, and nutritional data."},
+                {"role": "system", "content": "You are a helpful recipe assistant. Format recipes with a title, ingredients with quantities, instructions, and nutrition."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=800,
@@ -281,7 +279,6 @@ def generate_recipe():
         )
         db.session.add(recipe)
         db.session.commit()
-        logger.info(f"Recipe saved for user {user.username}: {recipe.title}")
 
         return jsonify({"recipe_text": recipe_text, "credits": user.credits, "api_calls": user.api_calls})
 
@@ -291,10 +288,8 @@ def generate_recipe():
             try:
                 user.credits += 1
                 db.session.commit()
-                logger.info(f"Credit refunded for user {user.username} due to error. Remaining: {user.credits}")
-            except Exception as e:
-                logger.error(f"Failed to refund credit for user {user.username}: {e}")
-        logger.error(f"OpenAI or database error: {e}")
+            except:
+                pass
         return jsonify({"error": "openai_error", "message": str(e)}), 500
 
 @app.route('/cookbook', methods=['GET'])
@@ -322,7 +317,6 @@ def login():
         user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            logger.debug(f"User {user.username} logged in")
             return redirect(url_for('serve_frontend'))
         else:
             flash('Invalid credentials', 'error')
@@ -344,9 +338,7 @@ def google_callback():
 
         email = user_info.get('email')
         name = user_info.get('name', 'google_user')
-
         if not email:
-            logger.error('Google login failed: No email provided')
             return jsonify({'error': 'Google login failed: No email provided'}), 400
 
         user = User.query.filter_by(email=email).first()
@@ -366,10 +358,8 @@ def google_callback():
             )
             db.session.add(user)
             db.session.commit()
-            logger.info(f'New user created via Google OAuth: {username}')
 
         login_user(user)
-        logger.debug(f'User {user.username} logged in via Google')
         return redirect(url_for('serve_frontend'))
 
     except Exception as e:
@@ -398,7 +388,6 @@ def signup():
         )
         db.session.add(new_user)
         db.session.commit()
-        logger.info(f'New user signed up: {username}')
         return redirect(url_for('serve_frontend'))
     return redirect(url_for('serve_frontend'))
 
@@ -411,3 +400,4 @@ def logout():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+
