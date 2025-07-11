@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Subscription Cancelled - RecipeVerse</title>
+    <style>
+        body { background: #000; color: #fff; font-family: monospace; padding: 2rem; text-align: center; }
+        h1 { color: #ff5555; }
+        a { color: #218838; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>Subscription Cancelled</h1>
+    {% if error %}
+        <p>Error: {{ error }}</p>
+    {% else %}
+        <p>Your subscription was not completed.</p>
+    {% endif %}
+    <a href="{{ url_for('pricing') }}">Try Again</a>
+</body>
+</html>

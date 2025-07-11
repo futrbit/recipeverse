@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pricing - RecipeVerse</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; padding: 2rem; color: #333; }
+    h1 { text-align: center; color: #28a745; }
+    .plans { display: flex; justify-content: center; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; }
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 2rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 300px;
+      text-align: center;
+    }
+    .card h2 { margin-top: 0; color: #007bff; }
+    .card ul { list-style: none; padding: 0; margin: 1rem 0; }
+    .card li { margin: 0.5rem 0; }
+    .price { font-size: 1.5rem; font-weight: bold; color: #ff5733; margin-bottom: 1rem; }
+    .btn {
+      display: inline-block;
+      padding: 0.6rem 1.2rem;
+      margin-top: 1rem;
+      background: #28a745;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .btn:hover { background: #218838; }
+  </style>
+</head>
+<body>
+  <h1>Choose Your Plan</h1>
+  <div class="plans">
+    {% for plan in plans %}
+      <div class="card">
+        <h2>{{ plan.plan }}</h2>
+        <div class="price">
+          {% if plan.price == 0 %}
+            Free
+          {% else %}
+            ${{ plan.price }}
+          {% endif %}
+        </div>
+        <ul>
+          {% for feature in plan.features %}
+            <li>{{ feature }}</li>
+          {% endfor %}
+        </ul>
+        {% if plan.plan != 'Free' %}
+          <a href="#" class="btn subscribe-btn" data-plan="{{ plan.plan }}">Subscribe</a>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+    const stripe = Stripe("{{ stripe_publishable_key }}");
+
+    document.querySelectorAll('.subscribe-btn').forEach(button => {
+      button.addEventListener('click', async (e) => {
+        e.preventDefault();
+        const plan = button.dataset.plan;
+
+        try {
+          const res = await fetch('/stripe/create-checkout-session', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ plan })
+          });
+
+          const data = await res.json();
+          if (data.id) {
+            await stripe.redirectToCheckout({ sessionId: data.id });
+          } else {
+            alert("Error: " + (data.error || "Something went wrong."));
+          }
+        } catch (err) {
+          console.error(err);
+          alert("Failed to start checkout.");
+        }
+      });
+    });
+  </script>
+</body>
+</html>

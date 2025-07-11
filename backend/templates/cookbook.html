@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>My Cookbook</title>
+</head>
+<body style="font-family: Arial, sans-serif; max-width: 800px; margin: 3rem auto;">
+  <h1>{{ current_user.username }}'s Cookbook</h1>
+  <p><a href="{{ url_for('home') }}">Back to Home</a></p>
+
+  {% if recipes %}
+    <ul>
+    {% for recipe in recipes %}
+      <li>
+        <h2>{{ recipe.title }}</h2>
+        <p><strong>Cuisine:</strong> {{ recipe.cuisine }}</p>
+        <p><strong>Dietary:</strong> {{ recipe.dietary | join(', ') }}</p>
+        <p><strong>Nutrition per serving:</strong> {{ recipe.nutrition.calories }} kcal, {{ recipe.nutrition.protein }}g protein, {{ recipe.nutrition.fat }}g fat, {{ recipe.nutrition.carbs }}g carbs</p>
+        <h3>Ingredients</h3>
+        <ul>
+          {% for ing in recipe.ingredients %}
+            <li>{{ ing.quantity }} {{ ing.name }}</li>
+          {% endfor %}
+        </ul>
+        <h3>Instructions</h3>
+        <ol>
+          {% for step in recipe.instructions %}
+            <li>{{ step }}</li>
+          {% endfor %}
+        </ol>
+      </li>
+    {% endfor %}
+    </ul>
+  {% else %}
+    <p>You have no saved recipes yet.</p>
+  {% endif %}
+</body>
+</html>

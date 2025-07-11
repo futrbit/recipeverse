@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login - RecipeVerse</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f5f5f5;
+      text-align: center;
+    }
+    h1 {
+      color: #333;
+    }
+    form {
+      margin: 20px auto;
+      padding: 20px;
+      max-width: 400px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    input {
+      display: block;
+      margin: 10px auto;
+      padding: 10px;
+      width: 90%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      background-color: #28a745;
+      color: white;
+      margin-top: 10px;
+      width: 94%;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+    .google-btn {
+      background-color: #4285F4;
+      color: white;
+      margin-top: 15px;
+      width: 400px;
+      max-width: 90%;
+      border-radius: 5px;
+      font-weight: 600;
+    }
+    .google-btn:hover {
+      background-color: #357ae8;
+    }
+    .link {
+      margin-top: 15px;
+    }
+    .link a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .link a:hover {
+      text-decoration: underline;
+    }
+    /* Fix for anchor inside button */
+    a.google-link {
+      text-decoration: none;
+      display: inline-block;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Welcome to RecipeVerse</h1>
+  <p>Please log in to continue</p>
+
+  <form method="POST">
+    <input type="text" name="identifier" placeholder="Username or Email" required />
+    <input type="password" name="password" placeholder="Password" required />
+    <button type="submit">Login</button>
+  </form>
+
+  <p>OR</p>
+
+  <!-- Google Login Button -->
+  <a href="{{ url_for('login_google') }}" class="google-link">
+    <button type="button" class="google-btn">Continue with Google</button>
+  </a>
+
+  <div class="link">
+    <p>Don't have an account? <a href="{{ url_for('signup') }}">Sign up</a></p>
+  </div>
+
+</body>
+</html>

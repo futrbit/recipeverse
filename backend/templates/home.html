@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>RecipeVerse Home</title>
+</head>
+<body>
+  <h1>Welcome to RecipeVerse 👩‍🍳</h1>
+
+  {% if current_user.is_authenticated %}
+    <p>Hello, {{ current_user.username }}! <a href="{{ url_for('logout') }}">Logout</a></p>
+    <a href="{{ url_for('cookbook') }}">View My Cookbook</a>
+  {% else %}
+    <p><a href="{{ url_for('login') }}">Login</a> or <a href="{{ url_for('signup') }}">Sign Up</a> to start generating recipes.</p>
+  {% endif %}
+</body>
+</html>
