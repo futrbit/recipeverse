@@ -8,7 +8,7 @@ from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, login_required, current_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
-from openai import OpenAI
+import openai
 from dotenv import load_dotenv
 import secrets
 import stripe
@@ -20,12 +20,17 @@ app = Flask(__name__, instance_relative_config=True)
 CORS(app, supports_credentials=True, origins=[os.environ.get('FRONTEND_URL', 'http://localhost:3000')])
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+
 # Database configuration
 basedir = os.path.abspath(os.path.dirname(__file__))
 instance_path = os.path.join(basedir, 'instance')
 os.makedirs(instance_path, exist_ok=True)
 db_path = os.path.join(instance_path, 'recipeverse.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', f'sqlite:///{db_path}')
+
+# Fix for Windows paths in SQLALCHEMY_DATABASE_URI
+sqlite_uri = f"sqlite:///{db_path.replace('\\', '/')}"
+
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', sqlite_uri)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
@@ -39,6 +44,7 @@ logger.addHandler(file_handler)
 # Initialize extensions
 from extensions import db
 from models import User, Recipe
+
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -60,7 +66,7 @@ google = oauth.register(
 
 # Initialize Stripe and OpenAI
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
-client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -252,7 +258,7 @@ def generate_recipe():
     )
 
     try:
-        response = client.chat.completions.create(
+        response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful recipe assistant. Format recipes with a title, ingredients with quantities, instructions, and nutritional data."},
@@ -261,7 +267,7 @@ def generate_recipe():
             max_tokens=800,
             temperature=0.8,
         )
-        recipe_text = response.choices[0].message.content
+        recipe_text = response['choices'][0]['message']['content']
 
         recipe = Recipe(
             user_id=user.id,
@@ -335,7 +341,7 @@ def google_callback():
         token = google.authorize_access_token()
         nonce = session.get('nonce')
         user_info = google.parse_id_token(token, nonce=nonce)
-        
+
         email = user_info.get('email')
         name = user_info.get('name', 'google_user')
 
