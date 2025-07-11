@@ -3,9 +3,7 @@ services:
     name: recipeverse-backend
     env: python
     rootDir: backend
-    buildCommand: |
-      pip install -r requirements.txt
-      flask db upgrade
+    buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
       - key: FLASK_APP
