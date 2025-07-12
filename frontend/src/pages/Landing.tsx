@@ -71,15 +71,14 @@ const Landing: React.FC = () => {
   return (
     <>
       <header style={headerStyle}>
-        <img src="http://localhost:5000/static/logo.png" alt="RecipeVerse Logo" style={logoStyle} />
+        <img src="/static/logo.png" alt="RecipeVerse Logo" style={logoStyle} />
       </header>
 
       <main style={containerStyle}>
-        <img src="http://localhost:5000/static/hero.png" alt="Hero" style={heroStyle} />
+        <img src="/static/hero.png" alt="Hero" style={heroStyle} />
         <h1 style={headingStyle}>Welcome to RecipeVerse</h1>
         <p style={descriptionStyle}>
-          Craft personalized recipes with the power of AI. Choose your ingredients, diet, and flavor style —
-          we’ll do the rest.
+          Craft personalized recipes with the power of AI. Choose your ingredients, diet, and flavor style — we’ll do the rest.
         </p>
         <button style={buttonStyle} onClick={() => navigate('/login')}>
           Log In
@@ -94,3 +93,4 @@ const Landing: React.FC = () => {
 };
 
 export default Landing;
+
