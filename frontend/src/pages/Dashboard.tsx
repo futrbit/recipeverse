@@ -67,7 +67,7 @@ const Dashboard: React.FC = () => {
       <header style={headerStyle}>
         <img src="/static/logo.png" alt="RecipeVerse Logo" style={{ height: 50 }} />
         <nav>
-          <Link to="/" style={{ marginRight: 15 }}>Home</Link>
+          <Link to="/dashboard" style={{ marginRight: 15 }}>Dashboard</Link>
           <Link to="/cook" style={{ marginRight: 15 }}>Recipe Generator</Link>
           <Link to="/cookbook" style={{ marginRight: 15 }}>Cookbook</Link>
           <button onClick={() => navigate('/logout')} style={{ ...btnStyle, backgroundColor: '#dc3545' }}>
@@ -91,12 +91,6 @@ const Dashboard: React.FC = () => {
                 </button>
               </p>
             )}
-            <h2>About RecipeVerse</h2>
-            <p>
-              RecipeVerse is your go-to platform for crafting personalized recipes using AI.
-              Choose your ingredients, dietary preferences, and spice levels to generate unique dishes in seconds.
-              Whether you're a home cook or a food enthusiast, we're here to inspire your culinary adventures!
-            </p>
             <div>
               <button onClick={() => navigate('/cook')} style={btnStyle}>Go to Recipe Generator</button>
               <button onClick={() => navigate('/cookbook')} style={{ ...btnStyle, backgroundColor: '#007bff' }}>View My Cookbook</button>
@@ -118,3 +112,4 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
+
