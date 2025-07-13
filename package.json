@@ -1,6 +1,7 @@
 {
   "name": "recipeverse-frontend",
   "version": "0.1.0",
+  "homepage": "https://recipeverse-frontend.onrender.com",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
