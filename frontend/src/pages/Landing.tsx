@@ -71,11 +71,11 @@ const Landing: React.FC = () => {
   return (
     <>
       <header style={headerStyle}>
-        <img src="/static/logo.PNG" alt="RecipeVerse Logo" style={logoStyle} />
+        <img src="/static/logo.png" alt="RecipeVerse Logo" style={logoStyle} />
       </header>
 
       <main style={containerStyle}>
-        <img src="/static/hero.PNG" alt="Hero" style={heroStyle} />
+        <img src="/static/hero.png" alt="Hero" style={heroStyle} />
         <h1 style={headingStyle}>Welcome to RecipeVerse</h1>
         <p style={descriptionStyle}>
           Craft personalized recipes with the power of AI. Choose your ingredients, diet, and flavor style — we’ll do the rest.
