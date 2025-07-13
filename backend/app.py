@@ -89,6 +89,10 @@ def serve_frontend(path):
         return send_from_directory(dist_dir, path)
     return send_from_directory(dist_dir, 'index.html')
 
+@app.route('/ping')
+def ping():
+    return jsonify({'status': 'ok'})
+
 @app.route('/api/user-info')
 @login_required
 def user_info():
