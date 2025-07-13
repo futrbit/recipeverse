@@ -11,7 +11,7 @@ const Login: React.FC = () => {
     e.preventDefault();
 
     try {
-      const res = await fetch('https://recipeverse.onrender.com/login', {
+      const res = await fetch('https://recipeverse-xiuo.onrender.com', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // needed for cookies/session
@@ -87,7 +87,7 @@ const Login: React.FC = () => {
 
           <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
             <a
-              href="https://recipeverse.onrender.com/google/login"
+              href="https://recipeverse-xiuo.onrender.com"
               style={{ color: '#007bff', textDecoration: 'none', fontSize: '0.95rem' }}
             >
               Log in with Google
