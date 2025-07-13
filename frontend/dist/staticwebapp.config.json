@@ -1,0 +1,10 @@
+cd C:\Users\leebu\Desktop\recipeverse\frontend
+New-Item -ItemType Directory -Path public -Force
+Set-Content -Path public/staticwebapp.config.json -Value @'
+{
+"navigationFallback": {
+ "rewrite": "/index.html",
+ "exclude": ["/static/*", "/assets/*", "*.{png,jpg,jpeg,gif,svg,ico,css,js}"]
+}
+}
+'@
