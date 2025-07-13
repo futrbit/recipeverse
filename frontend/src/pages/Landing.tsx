@@ -11,35 +11,37 @@ const Landing: React.FC = () => {
         <img
           src="/static/logo.png"
           alt="RecipeVerse Logo"
-          className="h-16"
+          className="h-12 transition-transform duration-300 hover:scale-105"
           onError={(e) => console.error('Logo failed to load at /static/logo.png:', {
             src: e.currentTarget.src,
             status: e.currentTarget.complete ? 'loaded but broken' : 'not found',
+            error: e,
           })}
         />
       </header>
 
       {/* Main */}
       <main className="flex flex-col items-center justify-center text-center min-h-[80vh] px-4">
-        <div className="relative max-w-2xl w-full mb-8">
+        <div className="relative w-full max-w-lg mb-8">
           <img
             src="/static/hero.png"
             alt="Hero"
-            className="w-full rounded-lg shadow-lg"
+            className="w-full rounded-lg shadow-lg object-cover"
             onError={(e) => console.error('Hero image failed to load at /static/hero.png:', {
               src: e.currentTarget.src,
               status: e.currentTarget.complete ? 'loaded but broken' : 'not found',
+              error: e,
             })}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-50 rounded-lg">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Welcome to RecipeVerse</h1>
-            <p className="text-lg md:text-xl max-w-md">
+            <h1 className="text-3xl md:text-4xl font-bold mb-4">Welcome to RecipeVerse</h1>
+            <p className="text-base md:text-lg max-w-xs md:max-w-sm">
               Craft personalized recipes with AI. Choose your ingredients, diet, and flavor style — we’ll do the rest.
             </p>
           </div>
         </div>
         <button
-          className="bg-green-600 text-white px-6 py-3 rounded-md text-lg font-semibold hover:bg-green-700 transition"
+          className="bg-green-600 text-white px-6 py-3 rounded-md text-lg font-semibold hover:bg-green-700 transition duration-300"
           onClick={() => navigate('/login')}
         >
           Log In
