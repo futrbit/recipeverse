@@ -1,105 +1,114 @@
+// src/pages/Login.tsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 const Login: React.FC = () => {
-  const navigate = useNavigate();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [loginMode, setLoginMode] = useState(true);
+  const [form, setForm] = useState({ identifier: '', password: '', email: '', username: '' });
+  const [message, setMessage] = useState('');
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const API_URL = 'https://recipeverse-xiuo.onrender.com';
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleLogin = async () => {
     try {
-      const res = await fetch('https://recipeverse-xiuo.onrender.com', {
+      const res = await fetch(`${API_URL}/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // needed for cookies/session
-        body: JSON.stringify({ username, password }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          identifier: form.identifier,
+          password: form.password,
+        }),
       });
-
       if (res.ok) {
-        navigate('/dashboard');
+        window.location.href = '/dashboard';
       } else {
-        const data = await res.json();
-        setError(data.message || 'Login failed');
+        setMessage('Login failed');
       }
     } catch (err) {
-      setError('Server error. Please try again.');
+      setMessage('Login error');
     }
   };
 
-  const loginBoxStyle: React.CSSProperties = {
-    maxWidth: 400,
-    width: '90%',
-    backgroundColor: 'white',
-    padding: '2rem',
-    borderRadius: 10,
-    boxShadow: '0 0 12px rgba(0,0,0,0.1)',
-    marginTop: '2rem',
+  const handleSignup = async () => {
+    try {
+      const res = await fetch(`${API_URL}/signup`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          username: form.username,
+          email: form.email,
+          password: form.password,
+        }),
+      });
+      if (res.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        const data = await res.json();
+        setMessage(data?.error || 'Signup failed');
+      }
+    } catch (err) {
+      setMessage('Signup error');
+    }
   };
 
   return (
-    <>
-      <header style={{ padding: '1rem', textAlign: 'center' }}>
-        <img src="/static/logo.png" alt="RecipeVerse Logo" style={{ height: 60 }} />
-      </header>
+    <div style={{ maxWidth: 400, margin: '50px auto', textAlign: 'center' }}>
+      <h2>{loginMode ? 'Log In' : 'Sign Up'}</h2>
 
-      <main style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div style={loginBoxStyle}>
-          <h2 style={{ marginBottom: '1rem' }}>Login</h2>
+      {!loginMode && (
+        <>
+          <input
+            name="username"
+            placeholder="Username"
+            value={form.username}
+            onChange={handleChange}
+            style={{ display: 'block', margin: '10px auto' }}
+          />
+          <input
+            name="email"
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={handleChange}
+            style={{ display: 'block', margin: '10px auto' }}
+          />
+        </>
+      )}
 
-          <form onSubmit={handleLogin}>
-            <input
-              type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              style={{ width: '100%', padding: '0.6rem', marginBottom: '1rem' }}
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ width: '100%', padding: '0.6rem', marginBottom: '1rem' }}
-            />
+      {loginMode && (
+        <input
+          name="identifier"
+          placeholder="Username or Email"
+          value={form.identifier}
+          onChange={handleChange}
+          style={{ display: 'block', margin: '10px auto' }}
+        />
+      )}
 
-            {error && <p style={{ color: 'red', fontSize: '0.9rem' }}>{error}</p>}
+      <input
+        name="password"
+        type="password"
+        placeholder="Password"
+        value={form.password}
+        onChange={handleChange}
+        style={{ display: 'block', margin: '10px auto' }}
+      />
 
-            <button
-              type="submit"
-              style={{
-                width: '100%',
-                padding: '0.8rem',
-                backgroundColor: '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: 5,
-                cursor: 'pointer',
-              }}
-            >
-              Log In
-            </button>
-          </form>
+      <button onClick={loginMode ? handleLogin : handleSignup} style={{ marginTop: 10 }}>
+        {loginMode ? 'Log In' : 'Sign Up'}
+      </button>
 
-          <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-            <a
-              href="https://recipeverse-xiuo.onrender.com"
-              style={{ color: '#007bff', textDecoration: 'none', fontSize: '0.95rem' }}
-            >
-              Log in with Google
-            </a>
-          </div>
-        </div>
-      </main>
+      <p style={{ marginTop: 20, cursor: 'pointer' }} onClick={() => setLoginMode(!loginMode)}>
+        {loginMode ? 'Need an account? Sign Up' : 'Already have an account? Log In'}
+      </p>
 
-      <footer style={{ textAlign: 'center', padding: '1rem', fontSize: '0.85rem', color: '#999' }}>
-        &copy; 2025 RecipeVerse · All rights reserved
-      </footer>
-    </>
+      {message && <p style={{ color: 'red' }}>{message}</p>}
+    </div>
   );
 };
 

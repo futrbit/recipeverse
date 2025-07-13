@@ -21,7 +21,11 @@ frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-xiuo.onrender
 print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 
 app = Flask(__name__, instance_relative_config=True)
-CORS(app, supports_credentials=True, origins=[frontend_url])
+CORS(app, supports_credentials=True, origins=[
+    frontend_url,
+    "http://localhost:5173",  # allow Vite dev server for local testing
+])
+
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
