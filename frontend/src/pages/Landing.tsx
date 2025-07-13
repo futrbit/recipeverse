@@ -5,14 +5,17 @@ const Landing: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="bg-white shadow-md p-4 flex justify-center items-center">
         <img
           src="/static/logo.png"
           alt="RecipeVerse Logo"
           className="h-16"
-          onError={(e) => console.error('Logo failed to load at /static/logo.png:', e)}
+          onError={(e) => console.error('Logo failed to load at /static/logo.png:', {
+            src: e.currentTarget.src,
+            status: e.currentTarget.complete ? 'loaded but broken' : 'not found',
+          })}
         />
       </header>
 
@@ -23,7 +26,10 @@ const Landing: React.FC = () => {
             src="/static/hero.png"
             alt="Hero"
             className="w-full rounded-lg shadow-lg"
-            onError={(e) => console.error('Hero image failed to load at /static/hero.png:', e)}
+            onError={(e) => console.error('Hero image failed to load at /static/hero.png:', {
+              src: e.currentTarget.src,
+              status: e.currentTarget.complete ? 'loaded but broken' : 'not found',
+            })}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-50 rounded-lg">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">Welcome to RecipeVerse</h1>
