@@ -1,58 +1,94 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+const headerStyle: React.CSSProperties = {
+  backgroundColor: '#fff',
+  padding: '1rem 2rem',
+  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+const logoStyle: React.CSSProperties = {
+  height: 60,
+};
+
+const containerStyle: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  textAlign: 'center',
+  minHeight: '80vh',
+  backgroundColor: '#f8f9fa',
+  padding: '2rem',
+};
+
+const heroStyle: React.CSSProperties = {
+  maxWidth: 600,
+  width: '90%',
+  borderRadius: 10,
+  marginBottom: '2rem',
+  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+};
+
+const headingStyle: React.CSSProperties = {
+  fontSize: '2.5rem',
+  marginBottom: '1rem',
+  color: '#333',
+};
+
+const descriptionStyle: React.CSSProperties = {
+  fontSize: '1.2rem',
+  marginBottom: '2rem',
+  color: '#555',
+  maxWidth: 600,
+};
+
+const buttonStyle: React.CSSProperties = {
+  padding: '0.8rem 1.5rem',
+  fontSize: '1rem',
+  backgroundColor: '#28a745',
+  color: 'white',
+  border: 'none',
+  borderRadius: 5,
+  cursor: 'pointer',
+};
+
+const footerStyle: React.CSSProperties = {
+  backgroundColor: '#fff',
+  textAlign: 'center',
+  padding: '1rem',
+  fontSize: '0.9rem',
+  color: '#888',
+  boxShadow: '0 -2px 5px rgba(0,0,0,0.1)',
+};
+
 const Landing: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Header */}
-      <header className="bg-white shadow-md p-4 flex justify-center items-center">
-        <img
-          src="/static/logo.png"
-          alt="RecipeVerse Logo"
-          className="h-12 transition-transform duration-300 hover:scale-105"
-          onError={(e) => console.error('Logo failed to load at /static/logo.png:', {
-            src: e.currentTarget.src,
-            status: e.currentTarget.complete ? 'loaded but broken' : 'not found',
-            error: e,
-          })}
-        />
+    <>
+      <header style={headerStyle}>
+        <img src="/static/logo.PNG" alt="RecipeVerse Logo" style={logoStyle} />
       </header>
 
-      {/* Main */}
-      <main className="flex flex-col items-center justify-center text-center min-h-[80vh] px-4">
-        <div className="relative w-full max-w-lg mb-8">
-          <img
-            src="/static/hero.png"
-            alt="Hero"
-            className="w-full rounded-lg shadow-lg object-cover"
-            onError={(e) => console.error('Hero image failed to load at /static/hero.png:', {
-              src: e.currentTarget.src,
-              status: e.currentTarget.complete ? 'loaded but broken' : 'not found',
-              error: e,
-            })}
-          />
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-white bg-black bg-opacity-50 rounded-lg">
-            <h1 className="text-3xl md:text-4xl font-bold mb-4">Welcome to RecipeVerse</h1>
-            <p className="text-base md:text-lg max-w-xs md:max-w-sm">
-              Craft personalized recipes with AI. Choose your ingredients, diet, and flavor style — we’ll do the rest.
-            </p>
-          </div>
-        </div>
-        <button
-          className="bg-green-600 text-white px-6 py-3 rounded-md text-lg font-semibold hover:bg-green-700 transition duration-300"
-          onClick={() => navigate('/login')}
-        >
+      <main style={containerStyle}>
+        <img src="/static/hero.PNG" alt="Hero" style={heroStyle} />
+        <h1 style={headingStyle}>Welcome to RecipeVerse</h1>
+        <p style={descriptionStyle}>
+          Craft personalized recipes with the power of AI. Choose your ingredients, diet, and flavor style — we’ll do the rest.
+        </p>
+        <button style={buttonStyle} onClick={() => navigate('/login')}>
           Log In
         </button>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white shadow-inner text-center p-4 text-gray-600 text-sm">
+      <footer style={footerStyle}>
         © 2025 RecipeVerse · Made with 🍳 and ❤️
       </footer>
-    </div>
+    </>
   );
 };
 
