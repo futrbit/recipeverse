@@ -96,7 +96,7 @@ def ping():
 
 
 
-1e5103c (Update Login.tsx and frontend structure for Render deploymentmk)
+
 @app.route('/api/user-info')
 @login_required
 def user_info():
