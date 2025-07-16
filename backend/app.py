@@ -45,8 +45,8 @@ logger = logging.getLogger(__name__)
 logger.addHandler(file_handler)
 
 # Initialize extensions
-from backend.extensions import db
-from backend.models import User, Recipe
+from extensions import db
+from models import User, Recipe
 
 
 db.init_app(app)
