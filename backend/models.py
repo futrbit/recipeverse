@@ -1,4 +1,5 @@
-from extensions import db
+from backend.extensions import db
+
 
 
 
