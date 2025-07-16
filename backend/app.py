@@ -17,7 +17,7 @@ import stripe
 load_dotenv()
 basedir = os.path.abspath(os.path.dirname(__file__))
 # Clean FRONTEND_URL to avoid newline issues
-frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-xiuo.onrender.com").strip()
+frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onrender.com").strip()
 print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 
 app = Flask(__name__, instance_relative_config=True)
