@@ -9,3 +9,4 @@ stripe
 flask-cors
 sqlalchemy
 gunicorn
+psycopg2
