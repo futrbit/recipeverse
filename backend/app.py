@@ -66,7 +66,7 @@ class User(db.Model):
     password = db.Column(db.String(256), nullable=False)
     credits = db.Column(db.Integer, default=3)
     subscription_status = db.Column(db.String(20), default='free')
-    last_credit_reset = db.Column(db.DateTime)
+    last_reset = db.Column(db.DateTime)  # <== Changed here from last_credit_reset
     api_calls = db.Column(db.Integer, default=0)
     stripe_customer_id = db.Column(db.String(100))
     subscription_id = db.Column(db.String(100))
@@ -119,7 +119,7 @@ def user_info():
         "username": current_user.username,
         "credits": current_user.credits,
         "subscription_status": current_user.subscription_status,
-        "last_credit_reset": current_user.last_credit_reset.isoformat() if current_user.last_credit_reset else None,
+        "last_reset": current_user.last_reset.isoformat() if current_user.last_reset else None,  # changed here
         "api_calls": current_user.api_calls,
         "stripe_customer_id": current_user.stripe_customer_id
     })
@@ -131,7 +131,7 @@ def get_credits():
         "credits": current_user.credits,
         "subscription_status": current_user.subscription_status,
         "username": current_user.username,
-        "last_credit_reset": current_user.last_credit_reset.isoformat() if current_user.last_credit_reset else None,
+        "last_reset": current_user.last_reset.isoformat() if current_user.last_reset else None,  # changed here
         "api_calls": current_user.api_calls
     })
 
@@ -226,11 +226,11 @@ def generate_recipe():
 
     if user.subscription_status == 'free':
         now = datetime.now(timezone.utc)
-        last_reset_date = user.last_credit_reset.date() if user.last_credit_reset else None
+        last_reset_date = user.last_reset.date() if user.last_reset else None  # changed here
         if last_reset_date is None or last_reset_date < now.date():
             try:
                 user.credits = 3
-                user.last_credit_reset = now
+                user.last_reset = now  # changed here
                 db.session.commit()
                 logger.info(f"Credits reset to 3 for user {user.username} on {now.date()}")
             except Exception as e:
@@ -373,7 +373,8 @@ def google_callback():
                 password=generate_password_hash(secrets.token_urlsafe(16)),
                 subscription_status='free',
                 credits=3,
-                api_calls=0
+                api_calls=0,
+                last_reset=None  # optionally initialize last_reset here
             )
             db.session.add(user)
             db.session.commit()
@@ -411,7 +412,8 @@ def signup():
         password=hashed_pw,
         subscription_status='free',
         credits=3,
-        api_calls=0
+        api_calls=0,
+        last_reset=None  # optionally initialize last_reset here
     )
     db.session.add(user)
     try:
@@ -435,4 +437,3 @@ def logout():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
-
