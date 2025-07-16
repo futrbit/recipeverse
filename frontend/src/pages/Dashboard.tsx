@@ -1,3 +1,4 @@
+// frontend/src/pages/Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
@@ -53,14 +54,15 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/user_credits', { withCredentials: true });
+        const response = await axios.get('https://recipeverse-xiuo.onrender.com/api/user_credits', { withCredentials: true });
         setUser(response.data);
       } catch (err) {
         console.error('Failed to fetch user:', err);
+        navigate('/login'); // Redirect to login on auth failure
       }
     };
     fetchUser();
-  }, []);
+  }, [navigate]);
 
   return (
     <>
@@ -112,4 +114,3 @@ const Dashboard: React.FC = () => {
 };
 
 export default Dashboard;
-
