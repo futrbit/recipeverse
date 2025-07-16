@@ -22,10 +22,12 @@ print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 app = Flask(__name__, instance_relative_config=True)
 CORS(app, supports_credentials=True, origins=[
     frontend_url,
-    "http://localhost:5173",
+    "http://localhost:5173",  # allow Vite dev server for local testing
 ])
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+
+# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
@@ -74,6 +76,7 @@ def load_user(user_id):
         logger.error(f"Error in load_user: {e}")
         return None
 
+# Serve frontend
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -85,6 +88,7 @@ def serve_frontend(path):
     dist_dir = os.path.join(basedir, '..', 'frontend', 'dist')
     if path != "" and os.path.exists(os.path.join(dist_dir, path)):
         return send_from_directory(dist_dir, path)
+    # Fallback to index.html for React Router
     return send_from_directory(dist_dir, 'index.html')
 
 @app.route('/ping')
@@ -312,42 +316,20 @@ def cookbook():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect('/dashboard')  # ✅ changed from url_for('serve_frontend')
+        return redirect('/dashboard')  # UPDATED HERE: redirect logged in users to dashboard
+
     if request.method == 'POST':
         identifier = request.form.get('identifier')
         password = request.form.get('password')
         user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            return redirect('/dashboard')  # ✅
+            return redirect('/dashboard')  # UPDATED HERE: redirect after successful login
         else:
             flash('Invalid credentials', 'error')
-    return redirect('/landing')
+            return redirect('/landing')  # Redirect back to landing on failure
 
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if current_user.is_authenticated:
-        return redirect('/dashboard')  # ✅
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        if User.query.filter_by(username=username).first():
-            return jsonify({'error': 'Username exists'}), 400
-        if User.query.filter_by(email=email).first():
-            return jsonify({'error': 'Email already registered'}), 400
-        hashed = generate_password_hash(password, method='scrypt')
-        new_user = User(
-            username=username,
-            email=email,
-            password=hashed,
-            subscription_status='free',
-            credits=3
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect('/dashboard')  # ✅
-    return redirect('/landing')
+    return redirect('/landing')  # Redirect GET /login to landing or wherever you prefer
 
 @app.route('/google/login')
 def google_login():
@@ -360,49 +342,60 @@ def google_login():
 def google_callback():
     try:
         token = google.authorize_access_token()
-        nonce = session.get('nonce')
-        user_info = google.parse_id_token(token, nonce=nonce)
+        userinfo = google.parse_id_token(token, nonce=session.get('nonce'))
+        if not userinfo:
+            flash('Failed to get user info from Google.', 'error')
+            return redirect('/landing')
 
-        email = user_info.get('email')
-        name = user_info.get('name', 'google_user')
-        if not email:
-            return jsonify({'error': 'Google login failed: No email provided'}), 400
-
-        user = User.query.filter_by(email=email).first()
+        user = User.query.filter_by(email=userinfo['email']).first()
         if not user:
-            username = name.replace(' ', '_').lower()
-            base_username = username
-            counter = 1
-            while User.query.filter_by(username=username).first():
-                username = f'{base_username}_{counter}'
-                counter += 1
             user = User(
-                username=username,
-                email=email,
-                password=generate_password_hash('google_oauth_no_password', method='scrypt'),
+                username=userinfo['name'],
+                email=userinfo['email'],
+                password=generate_password_hash(secrets.token_urlsafe(16)),  # random pw, user logs in via Google
                 subscription_status='free',
-                credits=3
+                credits=3,
+                api_calls=0
             )
             db.session.add(user)
             db.session.commit()
 
         login_user(user)
-        return redirect('/dashboard')  # ✅
+        return redirect('/dashboard')  # UPDATED HERE: redirect after Google login success
     except Exception as e:
-        logger.error(f'Google OAuth error: {e}')
-        return jsonify({'error': 'Google login failed'}), 400
+        logger.error(f"Google login error: {e}")
+        flash('Authentication failed.', 'error')
+        return redirect('/landing')
 
-@app.route('/init-db')
-def init_db():
-    db.create_all()
-    return 'Database tables created!', 200
+@app.route('/signup', methods=['POST'])
+def signup():
+    identifier = request.form.get('identifier')
+    password = request.form.get('password')
+    existing_user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
+    if existing_user:
+        flash('User already exists', 'error')
+        return redirect('/landing')
+
+    hashed_pw = generate_password_hash(password)
+    user = User(
+        username=identifier,
+        email=identifier,
+        password=hashed_pw,
+        subscription_status='free',
+        credits=3,
+        api_calls=0
+    )
+    db.session.add(user)
+    db.session.commit()
+    login_user(user)
+    return redirect('/dashboard')  # UPDATED HERE: redirect after signup
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    session.clear()
+    flash('You have been logged out.', 'info')
     return redirect('/landing')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)), debug=True)
