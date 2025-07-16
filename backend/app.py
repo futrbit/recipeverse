@@ -389,12 +389,22 @@ def google_callback():
 def signup():
     identifier = request.form.get('identifier')
     password = request.form.get('password')
+
+    # Validate input presence
+    if not identifier or not password:
+        flash('Please provide both username/email and password', 'error')
+        return redirect('/landing')
+
+    # Check if user already exists by username or email
     existing_user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
     if existing_user:
         flash('User already exists', 'error')
         return redirect('/landing')
 
+    # Hash the password securely
     hashed_pw = generate_password_hash(password)
+
+    # Create new user with non-null username and email
     user = User(
         username=identifier,
         email=identifier,
@@ -404,9 +414,18 @@ def signup():
         api_calls=0
     )
     db.session.add(user)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        flash('Failed to create user, please try again.', 'error')
+        # Log the error if you want: logger.error(f"Signup DB error: {e}")
+        return redirect('/landing')
+
+    # Log user in immediately after successful signup
     login_user(user)
     return redirect('/dashboard')
+
 
 @app.route('/logout')
 @login_required
