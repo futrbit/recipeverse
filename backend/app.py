@@ -20,38 +20,32 @@ frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onre
 print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 
 app = Flask(__name__, instance_relative_config=True)
+
+# === CORS Setup ===
 CORS(app, supports_credentials=True, origins=[
     frontend_url,
-    "http://localhost:5173",  # allow Vite dev server for local testing
+    "http://localhost:5173"  # local dev frontend
 ])
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
-# Database configuration
+# Database config
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
-# Logging setup
+# Logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-file_handler = logging.StreamHandler()
-file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 logger = logging.getLogger(__name__)
-logger.addHandler(file_handler)
 
 # Initialize extensions
-from extensions import db
-from models import User, Recipe
-
-db.init_app(app)
+db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# Flask-Login
 login_manager = LoginManager()
 login_manager.login_view = 'login'
 login_manager.init_app(app)
 
-# OAuth
 oauth = OAuth(app)
 google = oauth.register(
     name='google',
@@ -61,40 +55,63 @@ google = oauth.register(
     client_kwargs={'scope': 'openid email profile'}
 )
 
-# Stripe and OpenAI
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 openai.api_key = os.environ.get("OPENAI_API_KEY")
+
+# Models
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(256), nullable=False)
+    credits = db.Column(db.Integer, default=3)
+    subscription_status = db.Column(db.String(20), default='free')
+    last_credit_reset = db.Column(db.DateTime)
+    api_calls = db.Column(db.Integer, default=0)
+    stripe_customer_id = db.Column(db.String(100))
+    subscription_id = db.Column(db.String(100))
+
+    def get_id(self):
+        return str(self.id)
+
+class Recipe(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    title = db.Column(db.String(200))
+    cuisine = db.Column(db.String(50))
+    dietary = db.Column(db.String(100))
+    ingredients = db.Column(db.Text)
+    instructions = db.Column(db.Text)
+    nutrition = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
 @login_manager.user_loader
 def load_user(user_id):
     try:
-        user = db.session.get(User, int(user_id))
+        user = User.query.get(int(user_id))
         if user:
             logger.debug(f"User loaded: {user.username}")
         return user
     except Exception as e:
-        logger.error(f"Error in load_user: {e}")
+        logger.error(f"Error loading user: {e}")
         return None
 
-# Serve frontend
+# Frontend serving
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    dist_dir = os.path.join(basedir, '..', 'frontend', 'dist')
+    full_path = os.path.join(dist_dir, path)
+    if path != "" and os.path.exists(full_path):
+        return send_from_directory(dist_dir, path)
+    return send_from_directory(dist_dir, 'index.html')
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
     return serve_frontend('')
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    dist_dir = os.path.join(basedir, '..', 'frontend', 'dist')
-    if path != "" and os.path.exists(os.path.join(dist_dir, path)):
-        return send_from_directory(dist_dir, path)
-    # Fallback to index.html for React Router
-    return send_from_directory(dist_dir, 'index.html')
-
-@app.route('/ping')
-def ping():
-    return jsonify({'status': 'ok'})
-
+# API routes
 @app.route('/api/user-info')
 @login_required
 def user_info():
@@ -104,7 +121,7 @@ def user_info():
         "subscription_status": current_user.subscription_status,
         "last_credit_reset": current_user.last_credit_reset.isoformat() if current_user.last_credit_reset else None,
         "api_calls": current_user.api_calls,
-        "stripe_customer_id": current_user.stripe_customer_id if hasattr(current_user, 'stripe_customer_id') else None
+        "stripe_customer_id": current_user.stripe_customer_id
     })
 
 @app.route('/api/user_credits')
@@ -131,7 +148,7 @@ def pricing():
         'user': {
             'username': current_user.username,
             'subscription_status': current_user.subscription_status,
-            'stripe_customer_id': current_user.stripe_customer_id if hasattr(current_user, 'stripe_customer_id') else None
+            'stripe_customer_id': current_user.stripe_customer_id
         }
     })
 
@@ -203,7 +220,7 @@ def stripe_webhook():
 @app.route('/generate', methods=['POST'])
 @login_required
 def generate_recipe():
-    user = db.session.get(User, current_user.id)
+    user = User.query.get(current_user.id)
     if not user:
         return jsonify({"error": "user_not_found", "message": "User not found."}), 404
 
@@ -296,6 +313,7 @@ def generate_recipe():
                 db.session.commit()
             except:
                 pass
+        logger.error(f"OpenAI API error: {e}")
         return jsonify({"error": "openai_error", "message": str(e)}), 500
 
 @app.route('/cookbook', methods=['GET'])
@@ -316,7 +334,7 @@ def cookbook():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect('/dashboard')  # UPDATED HERE: redirect logged in users to dashboard
+        return redirect('/dashboard')
 
     if request.method == 'POST':
         identifier = request.form.get('identifier')
@@ -324,12 +342,12 @@ def login():
         user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            return redirect('/dashboard')  # UPDATED HERE: redirect after successful login
+            return redirect('/dashboard')
         else:
             flash('Invalid credentials', 'error')
-            return redirect('/landing')  # Redirect back to landing on failure
+            return redirect('/landing')
 
-    return redirect('/landing')  # Redirect GET /login to landing or wherever you prefer
+    return redirect('/landing')
 
 @app.route('/google/login')
 def google_login():
@@ -352,7 +370,7 @@ def google_callback():
             user = User(
                 username=userinfo['name'],
                 email=userinfo['email'],
-                password=generate_password_hash(secrets.token_urlsafe(16)),  # random pw, user logs in via Google
+                password=generate_password_hash(secrets.token_urlsafe(16)),
                 subscription_status='free',
                 credits=3,
                 api_calls=0
@@ -361,7 +379,7 @@ def google_callback():
             db.session.commit()
 
         login_user(user)
-        return redirect('/dashboard')  # UPDATED HERE: redirect after Google login success
+        return redirect('/dashboard')
     except Exception as e:
         logger.error(f"Google login error: {e}")
         flash('Authentication failed.', 'error')
@@ -388,14 +406,13 @@ def signup():
     db.session.add(user)
     db.session.commit()
     login_user(user)
-    return redirect('/dashboard')  # UPDATED HERE: redirect after signup
+    return redirect('/dashboard')
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    flash('You have been logged out.', 'info')
     return redirect('/landing')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)), debug=True)
+    app.run(debug=True)
