@@ -16,24 +16,17 @@ import stripe
 # Load environment variables
 load_dotenv()
 basedir = os.path.abspath(os.path.dirname(__file__))
-# Clean FRONTEND_URL to avoid newline issues
 frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onrender.com").strip()
 print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 
 app = Flask(__name__, instance_relative_config=True)
 CORS(app, supports_credentials=True, origins=[
     frontend_url,
-    "http://localhost:5173",  # allow Vite dev server for local testing
+    "http://localhost:5173",
 ])
 
-
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
-
-# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
-
-
-
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
@@ -47,7 +40,6 @@ logger.addHandler(file_handler)
 # Initialize extensions
 from extensions import db
 from models import User, Recipe
-
 
 db.init_app(app)
 migrate = Migrate(app, db)
@@ -82,8 +74,6 @@ def load_user(user_id):
         logger.error(f"Error in load_user: {e}")
         return None
 
-# Serve frontend
-# app.py (after line 80)
 @app.route('/dashboard')
 @login_required
 def dashboard():
@@ -100,10 +90,6 @@ def serve_frontend(path):
 @app.route('/ping')
 def ping():
     return jsonify({'status': 'ok'})
-
-
-
-
 
 @app.route('/api/user-info')
 @login_required
@@ -326,17 +312,42 @@ def cookbook():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        return redirect(url_for('serve_frontend'))
+        return redirect('/dashboard')  # ✅ changed from url_for('serve_frontend')
     if request.method == 'POST':
         identifier = request.form.get('identifier')
         password = request.form.get('password')
         user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            return redirect(url_for('serve_frontend'))
+            return redirect('/dashboard')  # ✅
         else:
             flash('Invalid credentials', 'error')
-    return redirect(url_for('serve_frontend'))
+    return redirect('/landing')
+
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if current_user.is_authenticated:
+        return redirect('/dashboard')  # ✅
+    if request.method == 'POST':
+        username = request.form.get('username')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        if User.query.filter_by(username=username).first():
+            return jsonify({'error': 'Username exists'}), 400
+        if User.query.filter_by(email=email).first():
+            return jsonify({'error': 'Email already registered'}), 400
+        hashed = generate_password_hash(password, method='scrypt')
+        new_user = User(
+            username=username,
+            email=email,
+            password=hashed,
+            subscription_status='free',
+            credits=3
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        return redirect('/dashboard')  # ✅
+    return redirect('/landing')
 
 @app.route('/google/login')
 def google_login():
@@ -376,50 +387,22 @@ def google_callback():
             db.session.commit()
 
         login_user(user)
-        return redirect(url_for('serve_frontend'))
-
+        return redirect('/dashboard')  # ✅
     except Exception as e:
         logger.error(f'Google OAuth error: {e}')
         return jsonify({'error': 'Google login failed'}), 400
-
-@app.route('/signup', methods=['GET', 'POST'])
-def signup():
-    if current_user.is_authenticated:
-        return redirect(url_for('serve_frontend'))
-    if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        if User.query.filter_by(username=username).first():
-            return jsonify({'error': 'Username exists'}), 400
-        if User.query.filter_by(email=email).first():
-            return jsonify({'error': 'Email already registered'}), 400
-        hashed = generate_password_hash(password, method='scrypt')
-        new_user = User(
-            username=username,
-            email=email,
-            password=hashed,
-            subscription_status='free',
-            credits=3
-        )
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('serve_frontend'))
-    return redirect(url_for('serve_frontend'))
 
 @app.route('/init-db')
 def init_db():
     db.create_all()
     return 'Database tables created!', 200
 
-
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     session.clear()
-    return redirect(url_for('serve_frontend'))
+    return redirect('/landing')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
-
