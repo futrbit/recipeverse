@@ -30,13 +30,10 @@ CORS(app, supports_credentials=True, origins=[
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
 # Database configuration
-basedir = os.path.abspath(os.path.dirname(__file__))
-instance_path = os.path.join(basedir, 'instance')
-os.makedirs(instance_path, exist_ok=True)
-db_path = os.path.join(instance_path, 'recipeverse.db')
-sqlite_uri = f"sqlite:///{db_path.replace('\\', '/')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', sqlite_uri)
+
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
