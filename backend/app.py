@@ -15,7 +15,7 @@ import stripe
 
 # Load environment variables
 load_dotenv()
-
+basedir = os.path.abspath(os.path.dirname(__file__))
 # Clean FRONTEND_URL to avoid newline issues
 frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-xiuo.onrender.com").strip()
 print(f"Using FRONTEND_URL: {repr(frontend_url)}")
@@ -399,6 +399,12 @@ def signup():
         db.session.commit()
         return redirect(url_for('serve_frontend'))
     return redirect(url_for('serve_frontend'))
+
+@app.route('/init-db')
+def init_db():
+    db.create_all()
+    return 'Database tables created!', 200
+
 
 @app.route('/logout')
 @login_required
