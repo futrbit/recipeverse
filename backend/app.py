@@ -83,6 +83,12 @@ def load_user(user_id):
         return None
 
 # Serve frontend
+# app.py (after line 80)
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    return serve_frontend('')
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
