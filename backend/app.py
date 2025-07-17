@@ -20,11 +20,17 @@ print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 app = Flask(__name__, instance_relative_config=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
-# Enable CORS for frontend and local dev
-CORS(app, supports_credentials=True, origins=[
-    frontend_url,
-    "http://localhost:5173",  # Vite dev server
-])
+# Enable CORS for frontend and local dev with proper headers and methods
+CORS(
+    app,
+    supports_credentials=True,
+    origins=[
+        frontend_url,
+        "http://localhost:5173"  # local dev Vite server
+    ],
+    allow_headers=["Content-Type", "Authorization"],
+    methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+)
 
 # Setup logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -141,6 +147,7 @@ def get_credits():
         "last_credit_reset": user_data.get('last_credit_reset'),
         "api_calls": user_data.get('api_calls', 0)
     })
+
 
 # === Pricing Plans ===
 @app.route('/pricing', methods=['GET'])
