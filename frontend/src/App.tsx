@@ -4,7 +4,6 @@ import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Cookbook from './pages/Cookbook';
 import Pricing from './pages/Pricing';
-import { auth } from './firebase';
 
 const App: React.FC = () => {
   const isAuthenticated = !!localStorage.getItem('idToken');
