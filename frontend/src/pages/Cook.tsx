@@ -16,6 +16,7 @@ const Cook: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
   const meats = ['Chicken', 'Beef', 'Fish', 'Pork', 'Lamb', 'Shrimp', 'Tofu', 'Tempeh', 'Eggs'];
   const vegetables = ['Carrot', 'Spinach', 'Onion', 'Tomato', 'Bell Pepper', 'Zucchini', 'Cauliflower', 'Broccoli'];
@@ -24,21 +25,29 @@ const Cook: React.FC = () => {
   const cuisines = ['Random', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Mediterranean', 'Thai', 'French', 'Japanese'];
   const dietaryOptions = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'];
 
+  // Fetch user info with token auth
   useEffect(() => {
-    fetch('/api/user-info', { credentials: 'include' })
-      .then((res) => {
+    const fetchUserInfo = async () => {
+      const idToken = localStorage.getItem('idToken');
+      if (!idToken) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/user-info`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
         if (!res.ok) throw new Error('Failed to fetch user info');
-        return res.json();
-      })
-      .then((data) => {
-        setUsername(data.username || 'User');
+        const data = await res.json();
+        setUsername(data.name || 'User'); // note: backend uses "name"
         setCredits(data.credits);
-      })
-      .catch(() => {
-        setUsername('User');
-        setCredits(null);
-      });
-  }, []);
+      } catch (err) {
+        console.error(err);
+        navigate('/login');
+      }
+    };
+    fetchUserInfo();
+  }, [BACKEND_URL, navigate]);
 
   const toggleIngredient = (item: string) => {
     setIngredients((prev) =>
@@ -65,15 +74,23 @@ const Cook: React.FC = () => {
       setError('Please select at least one ingredient.');
       return;
     }
-
     setLoading(true);
     setError('');
     setRecipe('Generating recipe...');
 
+    const idToken = localStorage.getItem('idToken');
+    if (!idToken) {
+      navigate('/login');
+      return;
+    }
+
     try {
-      const response = await fetch(`/generate?t=${new Date().getTime()}`, {
+      const response = await fetch(`${BACKEND_URL}/generate?t=${Date.now()}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
         body: JSON.stringify({
           ingredients,
           dietary,
@@ -81,14 +98,13 @@ const Cook: React.FC = () => {
           cook_time: 30,
           difficulty: 'easy',
           portions,
-          cuisine: cuisine || 'Random'
+          cuisine: cuisine || 'Random',
         }),
-        credentials: 'include'
       });
 
       if (!response.ok) {
         if (response.status === 403) {
-          window.location.href = '/login';
+          navigate('/login');
           return;
         }
         const err = await response.json();
@@ -96,9 +112,10 @@ const Cook: React.FC = () => {
       }
 
       const data = await response.json();
-      setCredits(data.remaining_credits !== undefined ? data.remaining_credits : credits);
+      setCredits(data.credits !== undefined ? data.credits : credits);
       setRecipe(data.recipe_text || 'Error: No recipe generated.');
-    } catch (e: any) {
+    } catch (e) {
+      console.error(e);
       setError('Error: Failed to generate recipe. Please try again.');
       setRecipe('');
     } finally {
@@ -266,7 +283,7 @@ const Cook: React.FC = () => {
 
       <div className="rv-input">
         <button id="rv-generateBtn" onClick={handleGenerate} disabled={loading}>
-          Generate Recipe
+          {loading ? 'Generating...' : 'Generate Recipe'}
         </button>
         <button id="rv-resetBtn" onClick={resetSelection} disabled={loading}>
           Reset Selection
@@ -274,9 +291,12 @@ const Cook: React.FC = () => {
       </div>
 
       {error && <div className="rv-error" role="alert">{error}</div>}
-      {loading && <div className="rv-spinner" aria-live="polite" aria-busy="true"></div>}
 
-      <div className="rv-result" aria-live="polite" style={{ display: recipe ? 'block' : 'none' }}>
+      <div
+        className="rv-result"
+        aria-live="polite"
+        style={{ display: recipe ? 'block' : 'none' }}
+      >
         <pre>{recipe || 'Your recipe will appear here...'}</pre>
       </div>
 
