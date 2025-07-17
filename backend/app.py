@@ -12,12 +12,19 @@ import openai
 from dotenv import load_dotenv
 import secrets
 import stripe
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 # Load environment variables
 load_dotenv()
 basedir = os.path.abspath(os.path.dirname(__file__))
 frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onrender.com").strip()
 print(f"Using FRONTEND_URL: {repr(frontend_url)}")
+
+# Firebase Admin SDK initialization
+cred = credentials.Certificate("firebase_private_key.json")  # Make sure this JSON is in your project folder
+firebase_admin.initialize_app(cred)
+db_firestore = firestore.client()
 
 app = Flask(__name__, instance_relative_config=True)
 
@@ -29,7 +36,7 @@ CORS(app, supports_credentials=True, origins=[
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
-# Database config
+# SQLAlchemy config
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
@@ -66,7 +73,7 @@ class User(db.Model):
     password = db.Column(db.String(256), nullable=False)
     credits = db.Column(db.Integer, default=3)
     subscription_status = db.Column(db.String(20), default='free')
-    last_reset = db.Column(db.DateTime)  # <== Changed here from last_credit_reset
+    last_reset = db.Column(db.DateTime)
     api_calls = db.Column(db.Integer, default=0)
     stripe_customer_id = db.Column(db.String(100))
     subscription_id = db.Column(db.String(100))
@@ -74,24 +81,10 @@ class User(db.Model):
     def get_id(self):
         return str(self.id)
 
-class Recipe(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    title = db.Column(db.String(200))
-    cuisine = db.Column(db.String(50))
-    dietary = db.Column(db.String(100))
-    ingredients = db.Column(db.Text)
-    instructions = db.Column(db.Text)
-    nutrition = db.Column(db.Text)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-
 @login_manager.user_loader
 def load_user(user_id):
     try:
-        user = User.query.get(int(user_id))
-        if user:
-            logger.debug(f"User loaded: {user.username}")
-        return user
+        return User.query.get(int(user_id))
     except Exception as e:
         logger.error(f"Error loading user: {e}")
         return None
@@ -111,7 +104,7 @@ def serve_frontend(path):
 def dashboard():
     return serve_frontend('')
 
-# API routes
+# API Routes
 @app.route('/api/user-info')
 @login_required
 def user_info():
@@ -119,7 +112,7 @@ def user_info():
         "username": current_user.username,
         "credits": current_user.credits,
         "subscription_status": current_user.subscription_status,
-        "last_reset": current_user.last_reset.isoformat() if current_user.last_reset else None,  # changed here
+        "last_reset": current_user.last_reset.isoformat() if current_user.last_reset else None,
         "api_calls": current_user.api_calls,
         "stripe_customer_id": current_user.stripe_customer_id
     })
@@ -131,7 +124,7 @@ def get_credits():
         "credits": current_user.credits,
         "subscription_status": current_user.subscription_status,
         "username": current_user.username,
-        "last_reset": current_user.last_reset.isoformat() if current_user.last_reset else None,  # changed here
+        "last_reset": current_user.last_reset.isoformat() if current_user.last_reset else None,
         "api_calls": current_user.api_calls
     })
 
@@ -226,11 +219,11 @@ def generate_recipe():
 
     if user.subscription_status == 'free':
         now = datetime.now(timezone.utc)
-        last_reset_date = user.last_reset.date() if user.last_reset else None  # changed here
+        last_reset_date = user.last_reset.date() if user.last_reset else None
         if last_reset_date is None or last_reset_date < now.date():
             try:
                 user.credits = 3
-                user.last_reset = now  # changed here
+                user.last_reset = now
                 db.session.commit()
                 logger.info(f"Credits reset to 3 for user {user.username} on {now.date()}")
             except Exception as e:
@@ -290,18 +283,16 @@ def generate_recipe():
         )
         recipe_text = response['choices'][0]['message']['content']
 
-        recipe = Recipe(
-            user_id=user.id,
-            title="Generated Recipe",
-            cuisine=cuisine if cuisine != 'Random' else None,
-            dietary=', '.join(dietary) if dietary else None,
-            ingredients=', '.join(ingredients),
-            instructions=recipe_text,
-            nutrition=None,
-            timestamp=datetime.now(timezone.utc)
-        )
-        db.session.add(recipe)
-        db.session.commit()
+        # Save to Firebase as well
+        doc_ref = db_firestore.collection("users").document(current_user.email).collection("recipes").document()
+        doc_ref.set({
+            "title": "Generated Recipe",
+            "cuisine": cuisine if cuisine != 'Random' else None,
+            "dietary": ', '.join(dietary) if dietary else None,
+            "ingredients": ', '.join(ingredients),
+            "instructions": recipe_text,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        })
 
         return jsonify({"recipe_text": recipe_text, "credits": user.credits, "api_calls": user.api_calls})
 
@@ -316,20 +307,25 @@ def generate_recipe():
         logger.error(f"OpenAI API error: {e}")
         return jsonify({"error": "openai_error", "message": str(e)}), 500
 
-@app.route('/cookbook', methods=['GET'])
+@app.route('/recipes/save', methods=['POST'])
 @login_required
-def cookbook():
-    recipes = Recipe.query.filter_by(user_id=current_user.id).order_by(Recipe.timestamp.desc()).all()
-    return jsonify([{
-        'id': r.id,
-        'title': r.title,
-        'cuisine': r.cuisine,
-        'dietary': r.dietary,
-        'ingredients': r.ingredients,
-        'instructions': r.instructions,
-        'nutrition': r.nutrition,
-        'timestamp': r.timestamp.isoformat()
-    } for r in recipes])
+def save_recipe_to_firebase():
+    data = request.json
+    if not data:
+        return jsonify({"error": "missing_data"}), 400
+
+    data['timestamp'] = datetime.now(timezone.utc).isoformat()
+    doc_ref = db_firestore.collection("users").document(current_user.email).collection("recipes").document()
+    doc_ref.set(data)
+    return jsonify({"message": "Recipe saved to Firebase"}), 200
+
+@app.route('/recipes', methods=['GET'])
+@login_required
+def fetch_user_recipes():
+    recipes_ref = db_firestore.collection("users").document(current_user.email).collection("recipes")
+    docs = recipes_ref.stream()
+    recipes = [doc.to_dict() for doc in docs]
+    return jsonify(recipes), 200
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -374,7 +370,7 @@ def google_callback():
                 subscription_status='free',
                 credits=3,
                 api_calls=0,
-                last_reset=None  # optionally initialize last_reset here
+                last_reset=None
             )
             db.session.add(user)
             db.session.commit()
@@ -391,21 +387,17 @@ def signup():
     identifier = request.form.get('identifier')
     password = request.form.get('password')
 
-    # Validate input presence
     if not identifier or not password:
         flash('Please provide both username/email and password', 'error')
         return redirect('/landing')
 
-    # Check if user already exists by username or email
     existing_user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
     if existing_user:
         flash('User already exists', 'error')
         return redirect('/landing')
 
-    # Hash the password securely
     hashed_pw = generate_password_hash(password)
 
-    # Create new user with non-null username and email
     user = User(
         username=identifier,
         email=identifier,
@@ -413,7 +405,7 @@ def signup():
         subscription_status='free',
         credits=3,
         api_calls=0,
-        last_reset=None  # optionally initialize last_reset here
+        last_reset=None
     )
     db.session.add(user)
     try:
@@ -421,13 +413,10 @@ def signup():
     except Exception as e:
         db.session.rollback()
         flash('Failed to create user, please try again.', 'error')
-        # Log the error if you want: logger.error(f"Signup DB error: {e}")
         return redirect('/landing')
 
-    # Log user in immediately after successful signup
     login_user(user)
     return redirect('/dashboard')
-
 
 @app.route('/logout')
 @login_required
