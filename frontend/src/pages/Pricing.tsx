@@ -35,6 +35,7 @@ const Pricing: React.FC = () => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
+  const [loadingUpgrade, setLoadingUpgrade] = useState(false);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -81,6 +82,7 @@ const Pricing: React.FC = () => {
 
   const handleUpgrade = async (plan: string) => {
     const idToken = localStorage.getItem('idToken');
+    setLoadingUpgrade(true);
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_URL}/stripe/create-checkout-session`,
@@ -91,6 +93,8 @@ const Pricing: React.FC = () => {
     } catch (error) {
       console.error('Error creating checkout session:', error);
       alert('Failed to initiate checkout. Please try again.');
+    } finally {
+      setLoadingUpgrade(false);
     }
   };
 
@@ -110,27 +114,34 @@ const Pricing: React.FC = () => {
         <button style={btnStyle} onClick={() => navigate('/cookbook')}>
           Cookbook
         </button>
-        <button style={btnStyle} onClick={() => navigate('/pricing')}>
-          Pricing
-        </button>
       </nav>
-      {pricingPlans.map((plan) => (
-        <div key={plan.plan}>
-          <h3>{plan.plan}</h3>
-          <p>Price: ${plan.price}</p>
-          <p>Credits: {plan.credits}</p>
-          <ul>
-            {plan.features.map((feature) => (
-              <li key={feature}>{feature}</li>
-            ))}
-          </ul>
-          {userInfo.subscription_status !== 'premium' && plan.plan !== 'Free' && (
-            <button style={btnStyle} onClick={() => handleUpgrade(plan.plan)}>
-              Upgrade to {plan.plan}
-            </button>
-          )}
-        </div>
-      ))}
+      {pricingPlans.map((plan) => {
+        const isCurrentPlan =
+          plan.plan.toLowerCase().includes(userInfo.subscription_status.toLowerCase());
+
+        return (
+          <div key={plan.plan}>
+            <h3>{plan.plan}</h3>
+            <p>Price: ${plan.price}</p>
+            <p>Credits: {plan.credits}</p>
+            <ul>
+              {plan.features.map((feature) => (
+                <li key={feature}>{feature}</li>
+              ))}
+            </ul>
+            {!isCurrentPlan && plan.plan !== 'Free' && (
+              <button
+                style={btnStyle}
+                onClick={() => handleUpgrade(plan.plan)}
+                disabled={loadingUpgrade}
+              >
+                {loadingUpgrade ? 'Redirecting...' : `Upgrade to ${plan.plan}`}
+              </button>
+            )}
+            {isCurrentPlan && <p><strong>You are on this plan</strong></p>}
+          </div>
+        );
+      })}
       <footer style={footerStyle}>RecipeVerse &copy; 2025</footer>
     </div>
   );
