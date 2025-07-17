@@ -1,19 +1,25 @@
 import os
 import logging
+import json
+import secrets
 from datetime import timedelta, datetime, timezone
-from flask import Flask, request, jsonify, redirect, url_for, flash, session, send_from_directory
+
+from flask import (
+    Flask, request, jsonify, redirect, url_for, flash, session, send_from_directory
+)
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_login import LoginManager, login_user, login_required, current_user, logout_user
+from flask_login import (
+    LoginManager, login_user, login_required, current_user, logout_user
+)
 from werkzeug.security import generate_password_hash, check_password_hash
 from authlib.integrations.flask_client import OAuth
 import openai
-from dotenv import load_dotenv
-import secrets
 import stripe
 import firebase_admin
 from firebase_admin import credentials, firestore
+from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
@@ -21,8 +27,16 @@ basedir = os.path.abspath(os.path.dirname(__file__))
 frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onrender.com").strip()
 print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 
-# Firebase Admin SDK initialization
-cred = credentials.Certificate("firebase_private_key.json")  # Make sure this JSON is in your project folder
+# Firebase Admin SDK - load from JSON string in ENV VAR
+firebase_cred_json = os.environ.get("FIREBASE_CREDENTIALS_JSON")
+if not firebase_cred_json:
+    raise RuntimeError("FIREBASE_CREDENTIALS_JSON environment variable not set!")
+try:
+    cred_dict = json.loads(firebase_cred_json)
+except Exception as e:
+    raise RuntimeError(f"Failed to parse FIREBASE_CREDENTIALS_JSON: {e}")
+
+cred = credentials.Certificate(cred_dict)
 firebase_admin.initialize_app(cred)
 db_firestore = firestore.client()
 
@@ -36,7 +50,7 @@ CORS(app, supports_credentials=True, origins=[
 
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
 
-# SQLAlchemy config
+# Database config
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
@@ -81,6 +95,17 @@ class User(db.Model):
     def get_id(self):
         return str(self.id)
 
+class Recipe(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    title = db.Column(db.String(200))
+    cuisine = db.Column(db.String(50))
+    dietary = db.Column(db.String(100))
+    ingredients = db.Column(db.Text)
+    instructions = db.Column(db.Text)
+    nutrition = db.Column(db.Text)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 @login_manager.user_loader
 def load_user(user_id):
     try:
@@ -89,7 +114,7 @@ def load_user(user_id):
         logger.error(f"Error loading user: {e}")
         return None
 
-# Frontend serving
+# Frontend serving (if you have frontend dist built and in relative folder)
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
@@ -104,7 +129,7 @@ def serve_frontend(path):
 def dashboard():
     return serve_frontend('')
 
-# API Routes
+# User info APIs
 @app.route('/api/user-info')
 @login_required
 def user_info():
@@ -128,6 +153,7 @@ def get_credits():
         "api_calls": current_user.api_calls
     })
 
+# Pricing API
 @app.route('/pricing', methods=['GET'])
 @login_required
 def pricing():
@@ -145,6 +171,7 @@ def pricing():
         }
     })
 
+# Stripe checkout session creation
 @app.route('/stripe/create-checkout-session', methods=['POST'])
 @login_required
 def create_checkout_session():
@@ -174,6 +201,7 @@ def create_checkout_session():
         logger.error(f'Stripe checkout error: {e}')
         return jsonify({'error': str(e)}), 500
 
+# Stripe webhook endpoint
 @app.route('/stripe/webhook', methods=['POST'])
 def stripe_webhook():
     payload = request.get_data(as_text=True)
@@ -198,6 +226,7 @@ def stripe_webhook():
             user.credits = 9999
             db.session.commit()
             logger.info(f'User {user.username} upgraded to premium')
+
     elif event['type'] == 'customer.subscription.deleted':
         customer_id = event['data']['object']['customer']
         user = User.query.filter_by(stripe_customer_id=customer_id).first()
@@ -210,6 +239,7 @@ def stripe_webhook():
 
     return jsonify({'status': 'success'}), 200
 
+# Recipe generation route using OpenAI
 @app.route('/generate', methods=['POST'])
 @login_required
 def generate_recipe():
@@ -283,16 +313,18 @@ def generate_recipe():
         )
         recipe_text = response['choices'][0]['message']['content']
 
-        # Save to Firebase as well
-        doc_ref = db_firestore.collection("users").document(current_user.email).collection("recipes").document()
-        doc_ref.set({
-            "title": "Generated Recipe",
-            "cuisine": cuisine if cuisine != 'Random' else None,
-            "dietary": ', '.join(dietary) if dietary else None,
-            "ingredients": ', '.join(ingredients),
-            "instructions": recipe_text,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        })
+        recipe = Recipe(
+            user_id=user.id,
+            title="Generated Recipe",
+            cuisine=cuisine if cuisine != 'Random' else None,
+            dietary=', '.join(dietary) if dietary else None,
+            ingredients=', '.join(ingredients),
+            instructions=recipe_text,
+            nutrition=None,
+            timestamp=datetime.now(timezone.utc)
+        )
+        db.session.add(recipe)
+        db.session.commit()
 
         return jsonify({"recipe_text": recipe_text, "credits": user.credits, "api_calls": user.api_calls})
 
@@ -307,6 +339,26 @@ def generate_recipe():
         logger.error(f"OpenAI API error: {e}")
         return jsonify({"error": "openai_error", "message": str(e)}), 500
 
+# Cookbook route: fetch user recipes from DB
+@app.route('/cookbook', methods=['GET'])
+@login_required
+def cookbook():
+    recipes = Recipe.query.filter_by(user_id=current_user.id).order_by(Recipe.timestamp.desc()).all()
+    result = []
+    for r in recipes:
+        result.append({
+            "id": r.id,
+            "title": r.title,
+            "cuisine": r.cuisine,
+            "dietary": r.dietary,
+            "ingredients": r.ingredients,
+            "instructions": r.instructions,
+            "nutrition": r.nutrition,
+            "timestamp": r.timestamp.isoformat()
+        })
+    return jsonify(result)
+
+# Firebase Firestore: Save a recipe
 @app.route('/recipes/save', methods=['POST'])
 @login_required
 def save_recipe_to_firebase():
@@ -314,11 +366,12 @@ def save_recipe_to_firebase():
     if not data:
         return jsonify({"error": "missing_data"}), 400
 
-    data['timestamp'] = datetime.now(timezone.utc).isoformat()
     doc_ref = db_firestore.collection("users").document(current_user.email).collection("recipes").document()
+    data['timestamp'] = datetime.now(timezone.utc).isoformat()
     doc_ref.set(data)
     return jsonify({"message": "Recipe saved to Firebase"}), 200
 
+# Firebase Firestore: Get all recipes for user
 @app.route('/recipes', methods=['GET'])
 @login_required
 def fetch_user_recipes():
@@ -327,102 +380,50 @@ def fetch_user_recipes():
     recipes = [doc.to_dict() for doc in docs]
     return jsonify(recipes), 200
 
-@app.route('/login', methods=['GET', 'POST'])
+# Google OAuth routes
+@app.route('/login')
 def login():
-    if current_user.is_authenticated:
-        return redirect('/dashboard')
+    redirect_uri = url_for('authorize', _external=True)
+    return google.authorize_redirect(redirect_uri)
 
-    if request.method == 'POST':
-        identifier = request.form.get('identifier')
-        password = request.form.get('password')
-        user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect('/dashboard')
-        else:
-            flash('Invalid credentials', 'error')
-            return redirect('/landing')
+@app.route('/authorize')
+def authorize():
+    token = google.authorize_access_token()
+    userinfo = google.parse_id_token(token)
+    if not userinfo:
+        flash("Failed to login with Google.", "error")
+        return redirect(url_for('login'))
 
-    return redirect('/landing')
-
-@app.route('/google/login')
-def google_login():
-    nonce = secrets.token_urlsafe(16)
-    session['nonce'] = nonce
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri, nonce=nonce)
-
-@app.route('/google/callback')
-def google_callback():
-    try:
-        token = google.authorize_access_token()
-        userinfo = google.parse_id_token(token, nonce=session.get('nonce'))
-        if not userinfo:
-            flash('Failed to get user info from Google.', 'error')
-            return redirect('/landing')
-
-        user = User.query.filter_by(email=userinfo['email']).first()
-        if not user:
-            user = User(
-                username=userinfo['name'],
-                email=userinfo['email'],
-                password=generate_password_hash(secrets.token_urlsafe(16)),
-                subscription_status='free',
-                credits=3,
-                api_calls=0,
-                last_reset=None
-            )
-            db.session.add(user)
-            db.session.commit()
-
-        login_user(user)
-        return redirect('/dashboard')
-    except Exception as e:
-        logger.error(f"Google login error: {e}")
-        flash('Authentication failed.', 'error')
-        return redirect('/landing')
-
-@app.route('/signup', methods=['POST'])
-def signup():
-    identifier = request.form.get('identifier')
-    password = request.form.get('password')
-
-    if not identifier or not password:
-        flash('Please provide both username/email and password', 'error')
-        return redirect('/landing')
-
-    existing_user = User.query.filter((User.username == identifier) | (User.email == identifier)).first()
-    if existing_user:
-        flash('User already exists', 'error')
-        return redirect('/landing')
-
-    hashed_pw = generate_password_hash(password)
-
-    user = User(
-        username=identifier,
-        email=identifier,
-        password=hashed_pw,
-        subscription_status='free',
-        credits=3,
-        api_calls=0,
-        last_reset=None
-    )
-    db.session.add(user)
-    try:
+    user = User.query.filter_by(email=userinfo['email']).first()
+    if not user:
+        # Create new user with random username
+        base_username = userinfo.get('name', 'user').replace(" ", "").lower()
+        username = base_username
+        count = 1
+        while User.query.filter_by(username=username).first():
+            username = f"{base_username}{count}"
+            count += 1
+        user = User(
+            username=username,
+            email=userinfo['email'],
+            password=generate_password_hash(secrets.token_urlsafe(16)),
+            credits=3,
+            subscription_status='free',
+            last_reset=datetime.now(timezone.utc)
+        )
+        db.session.add(user)
         db.session.commit()
-    except Exception as e:
-        db.session.rollback()
-        flash('Failed to create user, please try again.', 'error')
-        return redirect('/landing')
 
     login_user(user)
-    return redirect('/dashboard')
+    return redirect(url_for('dashboard'))
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    return redirect('/landing')
+    return redirect(frontend_url)
 
+# Run server
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+    port = int(os.environ.get('PORT', 10000))
+    app.run(host='0.0.0.0', port=port)
