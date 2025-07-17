@@ -24,68 +24,70 @@ h1, h2, h3, p {
 }
 
 .ingredient-btn, .dietary-btn {
-  padding: 8px 15px;
-  border-radius: 6px;
+  padding: 10px 20px;
+  border-radius: 8px;
   border: none;
   background-color: #28a745;
   color: white;
   cursor: pointer;
-
-  /* Smooth transitions for hover, focus, active */
-  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: background-color 0.25s ease, transform 0.1s ease;
 }
 
 .ingredient-btn.selected, .dietary-btn.selected {
   background-color: #218838;
-  font-weight: bold;
-  box-shadow: 0 0 8px #218838;
+  transform: scale(1.15);
+  box-shadow: 0 0 10px #218838aa;
+}
+
+.ingredient-btn:active, .dietary-btn:active {
+  background-color: #1b6d2e;
   transform: scale(1.05);
+  box-shadow: 0 0 15px #1b6d2ecc;
 }
 
 .ingredient-btn:disabled, .dietary-btn:disabled {
   background-color: #999;
   cursor: not-allowed;
-}
-
-.ingredient-btn:active,
-.dietary-btn:active {
-  transform: scale(1.1);
-  filter: brightness(1.2);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  transform: none;
+  box-shadow: none;
 }
 
 #rv-generateBtn {
-  padding: 10px 20px;
+  padding: 12px 30px;
   background: orange;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-
-  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: background-color 0.25s ease, transform 0.15s ease;
 }
 
 #rv-generateBtn:active {
-  transform: scale(1.1);
-  filter: brightness(1.2);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  background-color: #cc7000;
+  transform: scale(0.95);
+  box-shadow: 0 0 10px #cc7000cc;
 }
 
 #rv-resetBtn {
-  padding: 10px 20px;
+  padding: 12px 30px;
   background: #dc3545;
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-
-  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
+  font-weight: bold;
+  font-size: 1.1rem;
+  transition: background-color 0.25s ease, transform 0.15s ease;
 }
 
 #rv-resetBtn:active {
-  transform: scale(1.1);
-  filter: brightness(1.2);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  background-color: #a62831;
+  transform: scale(0.95);
+  box-shadow: 0 0 10px #a62831cc;
 }
 
 .rv-input {
@@ -136,7 +138,7 @@ h1, h2, h3, p {
   100% { transform: rotate(360deg); }
 }
 
-/* Recipe result box */
+/* Main recipe result box */
 .rv-result {
   margin-top: 25px;
   background: #d4edda;
@@ -144,35 +146,34 @@ h1, h2, h3, p {
   border: 5px solid #ff0000;
   min-height: 150px;
   font-size: 16px;
-  white-space: pre-wrap;
   color: #000;
 
-  /* Fix overflow */
   max-width: 100%;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  word-break: break-word;
   box-sizing: border-box;
+
+  /* force text wrapping and no overflow */
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  overflow-x: hidden;
 }
 
-/* Nutrition highlight */
+/* Nutrition section highlight */
 .rv-nutrition {
-  margin-top: 20px;
-  background: #fff3cd;
-  border: 2px solid #ffeeba;
+  margin-top: 15px;
+  padding: 10px;
+  background-color: #fff3cd; /* light yellow */
+  border: 3px solid #ffc107; /* amber */
   border-radius: 8px;
-  padding: 15px;
   color: #856404;
   font-weight: bold;
-  box-shadow: 0 0 10px #ffeeba;
-  max-width: 400px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 16px;
   text-align: center;
-  font-size: 18px;
+  box-shadow: 0 0 10px #ffc107aa;
 }
 
-/* Share section buttons */
+/* Share buttons */
 .rv-share-section {
   margin-top: 20px;
   text-align: center;
@@ -186,16 +187,16 @@ h1, h2, h3, p {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-
-  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.15s ease;
 }
 
 .rv-share-section button:active {
-  transform: scale(1.1);
-  filter: brightness(1.2);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  background-color: #0056b3;
+  transform: scale(0.95);
 }
 
+/* Footer style */
 footer {
   margin-top: 20px;
   text-align: center;
