@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { auth, signOutUser } from '../firebase';
-import Cook from './Cook.tsx';
+import Cook from './Cook';
 import { UserInfo, PricingPlan } from '../types';
+
 
 const containerStyle: React.CSSProperties = {
   padding: '2rem',
