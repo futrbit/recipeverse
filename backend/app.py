@@ -6,7 +6,7 @@ from flask_cors import CORS
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
-import openai
+from openai import OpenAI
 import stripe
 import secrets
 
@@ -71,14 +71,17 @@ except Exception as e:
     raise e
 
 # Initialize OpenAI & Stripe keys
-openai.api_key = os.environ.get("OPENAI_API_KEY")
+openai_api_key = os.environ.get("OPENAI_API_KEY")
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
-if not openai.api_key:
+if not openai_api_key:
     logger.warning("OPENAI_API_KEY is not set.")
 
 if not stripe.api_key:
     logger.warning("STRIPE_SECRET_KEY is not set.")
+
+# Initialize OpenAI client once
+client = OpenAI(api_key=openai_api_key)
 
 # --- Helper: Verify Firebase ID token ---
 def verify_token():
@@ -334,7 +337,7 @@ def generate_recipe():
     )
 
     try:
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": "You are a helpful recipe assistant."},
@@ -343,7 +346,7 @@ def generate_recipe():
             max_tokens=800,
             temperature=0.8,
         )
-        recipe_text = response['choices'][0]['message']['content']
+        recipe_text = response.choices[0].message.content
 
         recipe_doc = {
             "user_id": uid,
