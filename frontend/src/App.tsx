@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
-import Landing from './pages/Landing';
-import Dashboard from './pages/Dashboard';
-import Cookbook from './pages/Cookbook';
-import Pricing from './pages/Pricing';
+import Landing from './pages/Landing.tsx';
+import Dashboard from './pages/Dashboard.tsx';
+import Cookbook from './pages/Cookbook.tsx';
+import Pricing from './pages/Pricing.tsx';
 
 const App: React.FC = () => {
   const isAuthenticated = !!localStorage.getItem('idToken');
