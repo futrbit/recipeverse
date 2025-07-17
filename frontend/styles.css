@@ -1,0 +1,118 @@
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #f4f4f4;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+.container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+  text-align: center;
+  color: #28a745;
+  margin-bottom: 30px;
+}
+
+/* Button Styling */
+button {
+  padding: 12px 20px;
+  margin: 6px;
+  border: none;
+  border-radius: 8px;
+  background-color: #28a745;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  background-color: #218838;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.96);
+  box-shadow: inset 0 0 5px #00000033;
+}
+
+#rv-generateBtn:active {
+  background-color: darkorange;
+}
+
+#rv-resetBtn:active {
+  background-color: #c82333;
+}
+
+/* Ingredient + Dietary Buttons */
+.ingredient-btn,
+.dietary-btn {
+  background-color: #6c757d;
+  color: white;
+}
+
+.ingredient-btn:hover,
+.dietary-btn:hover {
+  background-color: #5a6268;
+}
+
+/* Selected Ingredient Buttons */
+.ingredient-btn.selected {
+  background-color: #218838;
+  transform: scale(1.15);
+  box-shadow: 0 0 10px #66ff66;
+}
+
+/* Meat sizzle effect */
+.ingredient-btn.selected.meat {
+  background: linear-gradient(to right, #ff4e00, #ec9f05);
+  color: white;
+  box-shadow: 0 0 15px #ff9900;
+  transform: scale(1.2);
+}
+
+/* Selected Dietary Preferences with popup flash */
+.dietary-btn.selected {
+  background-color: #218838;
+  animation: popup 0.4s ease-in-out;
+}
+
+@keyframes popup {
+  0%   { transform: scale(1); box-shadow: none; }
+  50%  { transform: scale(1.2); box-shadow: 0 0 15px #ffd966; }
+  100% { transform: scale(1.1); box-shadow: 0 0 12px #ffd966; }
+}
+
+/* Recipe Result Box */
+.rv-result {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 15px;
+  background: #d4edda;
+  border: 3px solid #28a745;
+  font-size: 16px;
+  white-space: pre-wrap;
+  color: #000;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+
+/* Responsive improvements */
+@media (max-width: 600px) {
+  .container {
+    padding: 15px;
+  }
+
+  button {
+    width: 100%;
+    margin: 6px 0;
+  }
+}
