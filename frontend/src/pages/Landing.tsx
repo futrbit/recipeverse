@@ -1,4 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { signInWithGoogle } from '../firebase';
 
 const containerStyle: React.CSSProperties = {
   display: 'flex',
@@ -23,9 +25,16 @@ const buttonStyle: React.CSSProperties = {
 };
 
 const Landing: React.FC = () => {
-  const handleGoogleLogin = () => {
-    // Replace with your backend URL env var or hardcode for now
-    window.location.href = `${process.env.REACT_APP_BACKEND_URL || ''}/google/login`;
+  const navigate = useNavigate();
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithGoogle();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+      alert('Failed to sign in with Google. Please try again.');
+    }
   };
 
   return (
@@ -40,4 +49,3 @@ const Landing: React.FC = () => {
 };
 
 export default Landing;
-
