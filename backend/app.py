@@ -352,19 +352,96 @@ Make it fun and easy to follow."""
         )
         recipe_text = response.choices[0].message.content
         logger.info(f"Generated recipe for user {uid}")
-        return jsonify({"recipe": recipe_text})
+
+        # --- NEW: Extract Title and Save Recipe to Firestore ---
+        # A simple way to get title, you might need a more robust parsing
+        # if recipe_text format isn't consistent (e.g., if "Title:" isn't always present).
+        # We try to extract it from the markdown, otherwise default.
+        title_match = next((line.replace('Title:', '').strip() for line in recipe_text.split('\n') if line.lower().startswith('title:')), 'Untitled Recipe')
+
+        recipe_data_to_save = {
+            "user_id": uid,
+            "title": title_match, # Extracted title
+            "recipe_text": recipe_text, # Full markdown recipe
+            "ingredients_selected": ingredients, # Original user selections
+            "dietary_selected": dietary,
+            "spice_level_requested": spice_level,
+            "cook_time_requested": cook_time,
+            "difficulty_requested": difficulty,
+            "portions_requested": portions,
+            "cuisine_requested": cuisine,
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+        # Add the recipe to a 'recipes' collection in Firestore
+        db.collection('recipes').add(recipe_data_to_save)
+        logger.info(f"Saved recipe for user {uid} with title: {title_match}")
+        # --- END NEW ---
+
+        # Return the generated recipe text and updated credits
+        return jsonify({"recipe_text": recipe_text, "credits": user_data['credits']})
+
     except Exception as e:
         logger.error(f"OpenAI request failed: {e}")
         return jsonify({"error": "OpenAI request failed", "details": str(e)}), 500
 
+# --- NEW: /cookbook endpoint ---
+@app.route('/cookbook', methods=['GET'])
+def get_user_cookbook():
+    decoded, err_response = verify_token()
+    if err_response:
+        return err_response
+    
+    uid = decoded.get('uid')
+    
+    try:
+        # Fetch recipes for the authenticated user, ordered by timestamp (newest first)
+        recipes_query = db.collection('recipes').where('user_id', '==', uid).order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+        
+        recipes_list = []
+        for doc in recipes_query:
+            recipe_data = doc.to_dict()
+            
+            # Extract fields for the frontend Recipe type
+            full_recipe_text = recipe_data.get('recipe_text', '')
+            
+            # Frontend expects: id, title, cuisine, dietary, ingredients, instructions, nutrition, timestamp
+            # We're passing the full markdown to 'instructions' for now,
+            # as the frontend's Cookbook.tsx uses <pre>{recipe.instructions}</pre>
+            recipes_list.append({
+                "id": doc.id, # Firestore document ID as unique ID for React key
+                "title": recipe_data.get('title', 'Generated Recipe'), # Use the saved title
+                "cuisine": recipe_data.get('cuisine_requested', 'N/A'),
+                "dietary": ', '.join(recipe_data.get('dietary_selected', [])), # Join list to string
+                "ingredients": ', '.join(recipe_data.get('ingredients_selected', [])), # Join list to string
+                "instructions": full_recipe_text, # Full markdown content goes here
+                "nutrition": "See full recipe text for details", # Placeholder or extract specifically
+                "timestamp": recipe_data.get('timestamp')
+            })
+            
+        return jsonify(recipes_list), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching cookbook for user {uid}: {e}")
+        return jsonify({"error": "Failed to fetch recipes"}), 500
+# --- END NEW ---
+
 # Serve frontend static files if needed
+# IMPORTANT: This block should ideally be removed if your frontend is served by a separate static host
+# like Render Static Sites. This is primarily for local development or full-stack deployments.
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
-    if path != "" and os.path.exists(os.path.join(basedir, 'frontend', path)):
-        return send_from_directory(os.path.join(basedir, 'frontend'), path)
+    # Adjust 'frontend' to your actual static files directory name relative to app.py
+    frontend_dir = os.path.join(basedir, 'frontend') 
+    if os.path.exists(frontend_dir):
+        if path != "" and os.path.exists(os.path.join(frontend_dir, path)):
+            return send_from_directory(frontend_dir, path)
+        else:
+            return send_from_directory(frontend_dir, 'index.html')
     else:
-        return send_from_directory(os.path.join(basedir, 'frontend'), 'index.html')
+        # Fallback if frontend directory doesn't exist (e.g., when deployed separately)
+        return jsonify({"message": "Backend running, frontend static files not served from here."}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=int(os.environ.get("PORT", 10000)))
