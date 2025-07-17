@@ -1,4 +1,5 @@
 /* C:\Users\leebu\Desktop\recipeverse\frontend\src\Cook.css */
+
 .rv-container {
   max-width: 800px;
   margin: 0 auto;
@@ -29,23 +30,28 @@ h1, h2, h3, p {
   background-color: #28a745;
   color: white;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
-}
 
-.ingredient-btn:hover:not(:disabled), .dietary-btn:hover:not(:disabled) {
-  background-color: #218838;
-  transform: scale(1.05);
+  /* Smooth transitions for hover, focus, active */
+  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
 }
 
 .ingredient-btn.selected, .dietary-btn.selected {
   background-color: #218838;
   font-weight: bold;
-  transform: scale(1.1);
+  box-shadow: 0 0 8px #218838;
+  transform: scale(1.05);
 }
 
 .ingredient-btn:disabled, .dietary-btn:disabled {
   background-color: #999;
   cursor: not-allowed;
+}
+
+.ingredient-btn:active,
+.dietary-btn:active {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 #rv-generateBtn {
@@ -55,12 +61,14 @@ h1, h2, h3, p {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+
+  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
 }
 
-#rv-generateBtn:hover {
-  background: #e69500;
+#rv-generateBtn:active {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 #rv-resetBtn {
@@ -70,12 +78,14 @@ h1, h2, h3, p {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background-color 0.3s ease;
+
+  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
 }
 
-#rv-resetBtn:hover {
-  background: #b52a3a;
+#rv-resetBtn:active {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 .rv-input {
@@ -126,6 +136,7 @@ h1, h2, h3, p {
   100% { transform: rotate(360deg); }
 }
 
+/* Recipe result box */
 .rv-result {
   margin-top: 25px;
   background: #d4edda;
@@ -135,9 +146,33 @@ h1, h2, h3, p {
   font-size: 16px;
   white-space: pre-wrap;
   color: #000;
+
+  /* Fix overflow */
+  max-width: 100%;
   overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
+  box-sizing: border-box;
 }
 
+/* Nutrition highlight */
+.rv-nutrition {
+  margin-top: 20px;
+  background: #fff3cd;
+  border: 2px solid #ffeeba;
+  border-radius: 8px;
+  padding: 15px;
+  color: #856404;
+  font-weight: bold;
+  box-shadow: 0 0 10px #ffeeba;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  font-size: 18px;
+}
+
+/* Share section buttons */
 .rv-share-section {
   margin-top: 20px;
   text-align: center;
@@ -151,26 +186,14 @@ h1, h2, h3, p {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+
+  transition: background-color 0.2s ease, transform 0.1s ease, filter 0.1s ease, box-shadow 0.1s ease;
 }
 
-.rv-share-section button:hover {
-  background: #0056b3;
-}
-
-.rv-nutrition {
-  background-color: #fff3cd;
-  color: #856404;
-  padding: 15px;
-  border: 2px solid #ffeeba;
-  border-radius: 6px;
-  margin-top: 20px;
-  font-size: 16px;
-  font-weight: bold;
-  text-align: center;
-  box-shadow: 0 0 8px rgba(255, 223, 0, 0.5);
-  white-space: pre-wrap;
-  word-break: break-word;
+.rv-share-section button:active {
+  transform: scale(1.1);
+  filter: brightness(1.2);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 }
 
 footer {
