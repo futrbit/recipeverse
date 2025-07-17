@@ -1,95 +1,95 @@
 import os
+import logging
+import json
 import secrets
-from flask import Flask, redirect, url_for, session, request, jsonify
-from authlib.integrations.flask_client import OAuth
+from datetime import timedelta, datetime
+
+from flask import Flask, request, jsonify, redirect, url_for, session
 from flask_cors import CORS
+import firebase_admin
+from firebase_admin import credentials, firestore
+from dotenv import load_dotenv
 import openai
 
+# Load environment variables from .env
+load_dotenv()
+
+# Strip FRONTEND_URL to avoid newline/whitespace issues
+frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onrender.com")
+if frontend_url:
+    frontend_url = frontend_url.strip()
+print(f"Using FRONTEND_URL (repr): {repr(frontend_url)}")
+
+# Firebase credentials from environment variables (split vars method)
+cred_dict = {
+    "type": os.environ.get("FIREBASE_TYPE"),
+    "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
+    "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
+    "private_key": os.environ.get("FIREBASE_PRIVATE_KEY", "").replace('\\n', '\n'),
+    "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
+    "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
+    "auth_uri": os.environ.get("FIREBASE_AUTH_URI"),
+    "token_uri": os.environ.get("FIREBASE_TOKEN_URI"),
+    "auth_provider_x509_cert_url": os.environ.get("FIREBASE_AUTH_PROVIDER_CERT_URL"),
+    "client_x509_cert_url": os.environ.get("FIREBASE_CLIENT_CERT_URL"),
+    "universe_domain": os.environ.get("FIREBASE_UNIVERSE_DOMAIN"),
+}
+
+# Initialize Firebase Admin
+try:
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+    db_firestore = firestore.client()
+    print("Firebase Admin initialized successfully.")
+except Exception as e:
+    print(f"Failed to initialize Firebase Admin: {e}")
+    raise
+
+# Initialize Flask app
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
 
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
-CORS(app, supports_credentials=True, origins=[FRONTEND_URL])
+# Setup CORS with safe origins
+CORS(app, supports_credentials=True, origins=[frontend_url, "http://localhost:5173"])
 
-# Setup Google OAuth
-oauth = OAuth(app)
-google = oauth.register(
-    name='google',
-    client_id=os.environ.get('GOOGLE_CLIENT_ID'),
-    client_secret=os.environ.get('GOOGLE_CLIENT_SECRET'),
-    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
-    client_kwargs={'scope': 'openid email profile'},
-)
+# Initialize OpenAI key
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-openai.api_key = os.environ.get('OPENAI_API_KEY')
-
-@app.route('/')
+# Basic health check route
+@app.route("/")
 def index():
-    if 'user' in session:
-        return redirect(url_for('dashboard'))
-    return '<a href="/login">Log in with Google</a>'
+    return redirect(frontend_url)
 
-@app.route('/login')
-def login():
-    redirect_uri = url_for('authorize', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-@app.route('/authorize')
-def authorize():
-    token = google.authorize_access_token()
-    user_info = google.parse_id_token(token)
-    if not user_info:
-        return "Failed to get user info", 400
-    session['user'] = {
-        'email': user_info['email'],
-        'name': user_info.get('name'),
-        'picture': user_info.get('picture'),
-    }
-    return redirect(url_for('dashboard'))
-
-@app.route('/dashboard')
-def dashboard():
-    if 'user' not in session:
-        return redirect(url_for('index'))
-    user = session['user']
-    return (
-        f"<h1>Welcome {user.get('name')}</h1>"
-        f"<p>Email: {user.get('email')}</p>"
-        f'<img src="{user.get("picture")}" alt="profile picture" width="100">'
-        '<br><br>'
-        '<a href="/logout">Logout</a>'
-    )
-
-@app.route('/logout')
-def logout():
-    session.pop('user', None)
-    return redirect(url_for('index'))
-
-@app.route('/generate', methods=['POST'])
+# Example route that uses Firestore and OpenAI (simplified)
+@app.route("/generate", methods=["POST"])
 def generate_recipe():
-    if 'user' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    data = request.json or {}
-    prompt = data.get('prompt')
+    data = request.json
+    prompt = data.get("prompt", "")
     if not prompt:
-        return jsonify({"error": "No prompt provided"}), 400
-
-    # Create prompt for recipe generation (adjust as needed)
-    full_prompt = f"Generate a detailed recipe based on the following input:\n{prompt}"
+        return jsonify({"error": "Missing prompt"}), 400
 
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": full_prompt}],
-            temperature=0.7,
-            max_tokens=500,
+        # Use OpenAI to generate something
+        response = openai.Completion.create(
+            model="text-davinci-003",
+            prompt=prompt,
+            max_tokens=150,
         )
-        recipe_text = response.choices[0].message.content.strip()
+        generated_text = response.choices[0].text.strip()
+
+        # Save to Firestore (example)
+        doc_ref = db_firestore.collection("recipes").document()
+        doc_ref.set({
+            "prompt": prompt,
+            "generated": generated_text,
+            "timestamp": datetime.utcnow()
+        })
+
+        return jsonify({"generated": generated_text})
     except Exception as e:
-        return jsonify({"error": "OpenAI API error", "details": str(e)}), 500
+        return jsonify({"error": str(e)}), 500
 
-    return jsonify({"recipe": recipe_text})
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
