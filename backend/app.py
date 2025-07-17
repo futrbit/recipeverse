@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, send_from_directory, abort
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 import firebase_admin
@@ -70,8 +70,10 @@ except Exception as e:
     logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
     raise e
 
-# Initialize OpenAI & Stripe keys
+# Initialize OpenAI client & Stripe keys
 openai_api_key = os.environ.get("OPENAI_API_KEY")
+client = OpenAI(api_key=openai_api_key)
+
 stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 if not openai_api_key:
@@ -79,9 +81,6 @@ if not openai_api_key:
 
 if not stripe.api_key:
     logger.warning("STRIPE_SECRET_KEY is not set.")
-
-# Initialize OpenAI client once
-client = OpenAI(api_key=openai_api_key)
 
 # --- Helper: Verify Firebase ID token ---
 def verify_token():
@@ -320,21 +319,26 @@ def generate_recipe():
     cook_time = data.get('cook_time', 30)
     difficulty = data.get('difficulty', 'easy')
     portions = data.get('portions', 2)
-    cuisine = data.get('cuisine', 'Random')
+    cuisine = data.get('cuisine', '')
 
-    if not ingredients:
-        # Refund credit if used
-        if user_data.get('subscription_status') != 'premium':
-            user_data['credits'] += 1
-            user_ref.set(user_data, merge=True)
-        return jsonify({"error": "invalid_input", "message": "At least one ingredient is required."}), 400
+    # Build prompt for OpenAI
+    prompt = f"""You are a friendly, creative recipe assistant. Given these inputs:
 
-    prompt = (
-        f"Generate an easy {cuisine} recipe for {portions} portions with: {', '.join(ingredients)}. "
-        f"Dietary restrictions: {', '.join(dietary) or 'None'}. Spice level {spice_level}/5. "
-        f"Cook time about {cook_time} minutes. Difficulty: {difficulty}. "
-        f"Include title, ingredients with amounts, step-by-step instructions, and per-serving nutrition info."
-    )
+Ingredients: {', '.join(ingredients)}
+Dietary preferences: {', '.join(dietary)}
+Spice level (1-5): {spice_level}
+Cook time (minutes): {cook_time}
+Difficulty: {difficulty}
+Portions: {portions}
+Cuisine: {cuisine}
+
+Generate a detailed recipe in markdown format with:
+- Title
+- Ingredients list
+- Step-by-step instructions
+- Nutrition info if possible
+
+Make it fun and easy to follow."""
 
     try:
         response = client.chat.completions.create(
@@ -344,58 +348,23 @@ def generate_recipe():
                 {"role": "user", "content": prompt}
             ],
             max_tokens=800,
-            temperature=0.8,
+            temperature=0.8
         )
         recipe_text = response.choices[0].message.content
-
-        recipe_doc = {
-            "user_id": uid,
-            "title": "Generated Recipe",
-            "cuisine": cuisine if cuisine != "Random" else None,
-            "dietary": ', '.join(dietary) if dietary else None,
-            "ingredients": ', '.join(ingredients),
-            "instructions": recipe_text,
-            "nutrition": None,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-
-        db.collection('recipes').add(recipe_doc)
-        return jsonify({"recipe_text": recipe_text, "credits": user_data.get('credits', 3), "api_calls": user_data.get('api_calls', 0)})
-
+        logger.info(f"Generated recipe for user {uid}")
+        return jsonify({"recipe": recipe_text})
     except Exception as e:
-        logger.error(f"OpenAI API error: {e}")
-        # Refund credit if generation failed for free user
-        if user_data.get('subscription_status') != 'premium':
-            user_data['credits'] += 1
-            user_ref.set(user_data, merge=True)
-        return jsonify({"error": "openai_error", "message": str(e)}), 500
+        logger.error(f"OpenAI request failed: {e}")
+        return jsonify({"error": "OpenAI request failed", "details": str(e)}), 500
 
-@app.route('/cookbook', methods=['GET'])
-def cookbook():
-    decoded, err_response = verify_token()
-    if err_response:
-        return err_response
-    uid = decoded.get('uid')
-    recipes_query = db.collection('recipes').where('user_id', '==', uid).order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
-    recipes = []
-    for doc in recipes_query:
-        r = doc.to_dict()
-        r['id'] = doc.id
-        recipes.append(r)
-    return jsonify(recipes)
-
-# Serve static frontend files for any other route (SPA)
+# Serve frontend static files if needed
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
-    dist_dir = os.path.join(basedir, '..', 'frontend', 'dist')
-    if path and os.path.exists(os.path.join(dist_dir, path)):
-        return send_from_directory(dist_dir, path)
+    if path != "" and os.path.exists(os.path.join(basedir, 'frontend', path)):
+        return send_from_directory(os.path.join(basedir, 'frontend'), path)
     else:
-        return send_from_directory(dist_dir, 'index.html')
+        return send_from_directory(os.path.join(basedir, 'frontend'), 'index.html')
 
-# Run Flask app
 if __name__ == '__main__':
-    port = int(os.environ.get('PORT', 10000))
-    logger.info(f"Starting Flask app on port {port}")
-    app.run(host='0.0.0.0', port=port)
+    app.run(debug=True, port=int(os.environ.get("PORT", 10000)))
