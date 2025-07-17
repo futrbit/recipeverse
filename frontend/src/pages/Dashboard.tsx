@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { auth, signOutUser } from '../firebase';
-import Cook from './Cook'; // Fixed import path to src/pages/Cook.tsx
+import Cook from './Cook';
 import { UserInfo, PricingPlan } from '../types';
 
 const containerStyle: React.CSSProperties = {
@@ -80,7 +80,7 @@ const Dashboard: React.FC = () => {
     <div style={containerStyle}>
       <h1>Welcome, {userInfo.name}</h1>
       <p>Credits: {userInfo.credits} | Subscription: {userInfo.subscription_status}</p>
-      <button onClick handleLogout} style={{ marginBottom: '1rem' }}>
+      <button onClick={handleLogout} style={{ marginBottom: '1rem' }}>
         Log Out
       </button>
       <nav>
