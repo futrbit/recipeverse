@@ -29,10 +29,18 @@ h1, h2, h3, p {
   background-color: #28a745;
   color: white;
   cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.ingredient-btn:hover:not(:disabled), .dietary-btn:hover:not(:disabled) {
+  background-color: #218838;
+  transform: scale(1.05);
 }
 
 .ingredient-btn.selected, .dietary-btn.selected {
   background-color: #218838;
+  font-weight: bold;
+  transform: scale(1.1);
 }
 
 .ingredient-btn:disabled, .dietary-btn:disabled {
@@ -47,6 +55,12 @@ h1, h2, h3, p {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+#rv-generateBtn:hover {
+  background: #e69500;
 }
 
 #rv-resetBtn {
@@ -56,6 +70,12 @@ h1, h2, h3, p {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
+}
+
+#rv-resetBtn:hover {
+  background: #b52a3a;
 }
 
 .rv-input {
@@ -115,6 +135,7 @@ h1, h2, h3, p {
   font-size: 16px;
   white-space: pre-wrap;
   color: #000;
+  overflow-wrap: break-word;
 }
 
 .rv-share-section {
@@ -130,6 +151,26 @@ h1, h2, h3, p {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.rv-share-section button:hover {
+  background: #0056b3;
+}
+
+.rv-nutrition {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 15px;
+  border: 2px solid #ffeeba;
+  border-radius: 6px;
+  margin-top: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  box-shadow: 0 0 8px rgba(255, 223, 0, 0.5);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 footer {
