@@ -1,115 +1,112 @@
-// frontend/src/pages/Dashboard.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
-
-const headerStyle: React.CSSProperties = {
-  background: '#fff',
-  padding: '1rem 2rem',
-  boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: '1rem',
-};
+import { auth, signOutUser } from '../firebase';
+import RecipeForm from './RecipeForm';
+import { UserInfo, PricingPlan } from '../types';
 
 const containerStyle: React.CSSProperties = {
-  maxWidth: 800,
-  margin: '0 auto 3rem',
   padding: '2rem',
-  background: '#fff',
-  borderRadius: 10,
-  boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
-  textAlign: 'center',
-  minHeight: '70vh',
-};
-
-const btnStyle: React.CSSProperties = {
-  display: 'inline-block',
-  padding: '0.8rem 1.5rem',
-  margin: '0.5rem',
-  backgroundColor: '#28a745',
-  color: 'white',
-  textDecoration: 'none',
-  borderRadius: 5,
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  border: 'none',
-};
-
-const footerStyle: React.CSSProperties = {
-  background: '#fff',
-  padding: '1rem',
-  textAlign: 'center',
-  color: '#666',
-  fontSize: '0.9rem',
-  boxShadow: '0 -2px 5px rgba(0,0,0,0.1)',
-  marginTop: 'auto',
+  maxWidth: '1200px',
+  margin: '0 auto',
 };
 
 const Dashboard: React.FC = () => {
-  const [user, setUser] = useState<{ username: string; credits: number; subscription_status: string } | null>(null);
   const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserInfo = async () => {
+      const idToken = localStorage.getItem('idToken');
+      if (!idToken) {
+        navigate('/');
+        return;
+      }
       try {
-        const response = await axios.get('https://recipeverse-xiuo.onrender.com/api/user_credits', { withCredentials: true });
-        setUser(response.data);
-      } catch (err) {
-        console.error('Failed to fetch user:', err);
-        navigate('/login'); // Redirect to login on auth failure
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/user-info`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        setUserInfo(response.data);
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+        navigate('/');
       }
     };
-    fetchUser();
+
+    const fetchPricing = async () => {
+      const idToken = localStorage.getItem('idToken');
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/pricing`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        setPricingPlans(response.data.plans);
+      } catch (error) {
+        console.error('Error fetching pricing:', error);
+      }
+    };
+
+    fetchUserInfo();
+    fetchPricing();
   }, [navigate]);
 
+  const handleLogout = async () => {
+    try {
+      await signOutUser();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const handleUpgrade = async (plan: string) => {
+    const idToken = localStorage.getItem('idToken');
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/stripe/create-checkout-session`,
+        { plan },
+        { headers: { Authorization: `Bearer ${idToken}` } }
+      );
+      window.location.href = response.data.id; // Redirect to Stripe Checkout
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Failed to initiate checkout. Please try again.');
+    }
+  };
+
+  if (!userInfo) return <div>Loading...</div>;
+
   return (
-    <>
-      <header style={headerStyle}>
-        <img src="/static/logo.png" alt="RecipeVerse Logo" style={{ height: 50 }} />
-        <nav>
-          <Link to="/dashboard" style={{ marginRight: 15 }}>Dashboard</Link>
-          <Link to="/cook" style={{ marginRight: 15 }}>Recipe Generator</Link>
-          <Link to="/cookbook" style={{ marginRight: 15 }}>Cookbook</Link>
-          <button onClick={() => navigate('/logout')} style={{ ...btnStyle, backgroundColor: '#dc3545' }}>
-            Logout
-          </button>
-        </nav>
-      </header>
-
-      <main style={containerStyle}>
-        {user ? (
-          <>
-            <h1>Welcome, {user.username}! 👋</h1>
-            <p style={{ color: '#28a745', fontWeight: 'bold' }}>You have {user.credits} credits left.</p>
-            {user.subscription_status === 'free' && (
-              <p>
-                <button
-                  onClick={() => navigate('/pricing')}
-                  style={{ background: 'none', border: 'none', color: '#28a745', cursor: 'pointer', fontWeight: 'bold', textDecoration: 'underline' }}
-                >
-                  Subscribe for unlimited recipes!
-                </button>
-              </p>
-            )}
-            <div>
-              <button onClick={() => navigate('/cook')} style={btnStyle}>Go to Recipe Generator</button>
-              <button onClick={() => navigate('/cookbook')} style={{ ...btnStyle, backgroundColor: '#007bff' }}>View My Cookbook</button>
-            </div>
-          </>
-        ) : (
-          <>
-            <h1>Welcome to RecipeVerse</h1>
-            <p>Loading your data...</p>
-          </>
-        )}
-      </main>
-
-      <footer style={footerStyle}>
-        Made with ❤️ by RecipeVerse · © 2025
-      </footer>
-    </>
+    <div style={containerStyle}>
+      <h1>Welcome, {userInfo.name}</h1>
+      <p>Credits: {userInfo.credits} | Subscription: {userInfo.subscription_status}</p>
+      <button onClick={handleLogout} style={{ marginBottom: '1rem' }}>
+        Log Out
+      </button>
+      <nav>
+        <button onClick={() => navigate('/dashboard')}>Generate Recipe</button>
+        <button onClick={() => navigate('/cookbook')}>Cookbook</button>
+        <button onClick={() => navigate('/pricing')}>Pricing</button>
+      </nav>
+      <h2>Generate a Recipe</h2>
+      <RecipeForm />
+      <h2>Upgrade Your Plan</h2>
+      {pricingPlans.map((plan) => (
+        <div key={plan.plan}>
+          <h3>{plan.plan}</h3>
+          <p>Price: ${plan.price}</p>
+          <p>Credits: {plan.credits}</p>
+          <ul>
+            {plan.features.map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
+          </ul>
+          {userInfo.subscription_status !== 'premium' && plan.plan !== 'Free' && (
+            <button onClick={() => handleUpgrade(plan.plan)}>Upgrade to {plan.plan}</button>
+          )}
+        </div>
+      ))}
+    </div>
   );
 };
 
