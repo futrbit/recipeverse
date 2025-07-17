@@ -1,49 +1,139 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { UserInfo, PricingPlan } from '../types';
+import { signOutUser } from '../firebase';
 
-export default function Pricing() {
-  return (
-    <>
-      <header style={headerStyle}>
-        <img src="/static/logo.png" alt="RecipeVerse Logo" style={{ height: 50 }} />
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/login">Log In</Link>
-          <Link to="/signup">Sign Up</Link>
-        </nav>
-      </header>
-      <main style={containerStyle}>
-        <h1>Subscription Plans</h1>
-        <p>Upgrade to Premium and enjoy unlimited recipe generation with no credit limits.</p>
-        <div style={planStyle}>
-          <h2>Free</h2>
-          <ul>
-            <li>3 recipe credits per day</li>
-            <li>Basic recipe generation</li>
-            <li>Access to Cookbook</li>
-          </ul>
-          <p style={{ fontWeight: 'bold' }}>Free</p>
-        </div>
-        <div style={planStyle}>
-          <h2>Premium</h2>
-          <ul>
-            <li>Unlimited recipe generation</li>
-            <li>Priority support</li>
-            <li>Exclusive recipes and features</li>
-          </ul>
-          <p style={{ fontWeight: 'bold' }}>$5.99/month</p>
-          <Link to="/checkout" style={btnStyle}>Upgrade Now</Link>
-        </div>
-      </main>
-      <footer style={footerStyle}>Made with ❤️ by RecipeVerse · © 2025</footer>
-    </>
-  );
-}
-
-const planStyle = {
-  border: '1px solid #ccc',
-  borderRadius: 8,
-  padding: '1rem',
-  marginBottom: '1rem',
-  maxWidth: 400,
+const containerStyle: React.CSSProperties = {
+  padding: '2rem',
+  maxWidth: '1200px',
+  margin: '0 auto',
 };
+
+const headerStyle: React.CSSProperties = {
+  fontSize: '2rem',
+  marginBottom: '1rem',
+};
+
+const btnStyle: React.CSSProperties = {
+  padding: '0.5rem 1rem',
+  margin: '0.5rem',
+  backgroundColor: '#4285F4',
+  color: 'white',
+  border: 'none',
+  borderRadius: '4px',
+  cursor: 'pointer',
+};
+
+const footerStyle: React.CSSProperties = {
+  marginTop: '2rem',
+  fontSize: '0.9rem',
+  color: '#666',
+};
+
+const Pricing: React.FC = () => {
+  const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
+  const [pricingPlans, setPricingPlans] = useState<PricingPlan[]>([]);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const idToken = localStorage.getItem('idToken');
+      if (!idToken) {
+        navigate('/');
+        return;
+      }
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/user-info`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        setUserInfo(response.data);
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+        navigate('/');
+      }
+    };
+
+    const fetchPricing = async () => {
+      const idToken = localStorage.getItem('idToken');
+      try {
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/pricing`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        setPricingPlans(response.data.plans);
+      } catch (error) {
+        console.error('Error fetching pricing:', error);
+      }
+    };
+
+    fetchUserInfo();
+    fetchPricing();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await signOutUser();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  const handleUpgrade = async (plan: string) => {
+    const idToken = localStorage.getItem('idToken');
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_URL}/stripe/create-checkout-session`,
+        { plan },
+        { headers: { Authorization: `Bearer ${idToken}` } }
+      );
+      window.location.href = response.data.id;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Failed to initiate checkout. Please try again.');
+    }
+  };
+
+  if (!userInfo) return <div>Loading...</div>;
+
+  return (
+    <div style={containerStyle}>
+      <h1 style={headerStyle}>Pricing Plans</h1>
+      <p>Logged in as: {userInfo.name} | Credits: {userInfo.credits}</p>
+      <button style={btnStyle} onClick={handleLogout}>
+        Log Out
+      </button>
+      <nav>
+        <button style={btnStyle} onClick={() => navigate('/dashboard')}>
+          Generate Recipe
+        </button>
+        <button style={btnStyle} onClick={() => navigate('/cookbook')}>
+          Cookbook
+        </button>
+        <button style={btnStyle} onClick={() => navigate('/pricing')}>
+          Pricing
+        </button>
+      </nav>
+      {pricingPlans.map((plan) => (
+        <div key={plan.plan}>
+          <h3>{plan.plan}</h3>
+          <p>Price: ${plan.price}</p>
+          <p>Credits: {plan.credits}</p>
+          <ul>
+            {plan.features.map((feature) => (
+              <li key={feature}>{feature}</li>
+            ))}
+          </ul>
+          {userInfo.subscription_status !== 'premium' && plan.plan !== 'Free' && (
+            <button style={btnStyle} onClick={() => handleUpgrade(plan.plan)}>
+              Upgrade to {plan.plan}
+            </button>
+          )}
+        </div>
+      ))}
+      <footer style={footerStyle}>RecipeVerse &copy; 2025</footer>
+    </div>
+  );
+};
+
+export default Pricing;
