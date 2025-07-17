@@ -1,13 +1,11 @@
 import os
 import logging
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, redirect, url_for, session, send_from_directory
+from flask import Flask, request, jsonify, session, redirect, url_for, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import credentials, firestore, auth
-import google.auth.transport.requests
-import google.oauth2.id_token
 import openai
 import stripe
 import secrets
@@ -21,16 +19,18 @@ print(f"Using FRONTEND_URL: {repr(frontend_url)}")
 # Initialize Flask app
 app = Flask(__name__, instance_relative_config=True)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+
+# Enable CORS for frontend and local dev
 CORS(app, supports_credentials=True, origins=[
     frontend_url,
-    "http://localhost:5173",  # Vite dev server for local testing
+    "http://localhost:5173",  # Vite dev server
 ])
 
-# Logging setup
+# Setup logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Initialize Firebase
+# Initialize Firebase Admin SDK with service account from env
 cred_dict = {
     "type": os.environ.get("FIREBASE_TYPE"),
     "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
@@ -48,11 +48,11 @@ cred = credentials.Certificate(cred_dict)
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
-# Initialize OpenAI and Stripe
+# Initialize OpenAI & Stripe
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
 
-# Middleware to verify Firebase ID token
+# Helper to verify Firebase ID token in Authorization header
 def verify_token():
     id_token = request.headers.get('Authorization')
     if not id_token or not id_token.startswith('Bearer '):
@@ -65,22 +65,35 @@ def verify_token():
         logger.error(f"Token verification failed: {e}")
         return None, jsonify({"error": "Invalid token"}), 401
 
-# Serve frontend
-@app.route('/dashboard')
-def dashboard():
-    return serve_frontend('')
+# === Authentication Routes ===
 
-@app.route('/', defaults={'path': ''})
-@app.route('/<path:path>')
-def serve_frontend(path):
-    dist_dir = os.path.join(basedir, '..', 'frontend', 'dist')
-    if path != "" and os.path.exists(os.path.join(dist_dir, path)):
-        return send_from_directory(dist_dir, path)
-    return send_from_directory(dist_dir, 'index.html')
+@app.route('/api/login', methods=['POST'])
+def firebase_login():
+    try:
+        id_token = request.json.get('token')
+        decoded_token = auth.verify_id_token(id_token)
+        uid = decoded_token['uid']
+        email = decoded_token.get('email')
+        name = decoded_token.get('name', 'User')
 
-@app.route('/ping')
-def ping():
-    return jsonify({'status': 'ok'})
+        # Store/update user in Firestore
+        user_ref = db.collection('users').document(uid)
+        user_ref.set({
+            "email": email,
+            "name": name,
+            "last_login": datetime.now(timezone.utc).isoformat()
+        }, merge=True)
+
+        return jsonify({"uid": uid, "email": email, "name": name})
+
+    except Exception as e:
+        logger.error(f"Login failed: {e}")
+        return jsonify({"error": "Invalid token"}), 401
+
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    # Stateless token auth - frontend just deletes token
+    return jsonify({"message": "Logged out"})
 
 @app.route('/api/user-info')
 def user_info():
@@ -129,6 +142,7 @@ def get_credits():
         "api_calls": user_data.get('api_calls', 0)
     })
 
+# === Pricing Plans ===
 @app.route('/pricing', methods=['GET'])
 def pricing():
     decoded_token, error = verify_token()
@@ -152,6 +166,7 @@ def pricing():
         }
     })
 
+# === Stripe Checkout ===
 @app.route('/stripe/create-checkout-session', methods=['POST'])
 def create_checkout_session():
     decoded_token, error = verify_token()
@@ -197,10 +212,10 @@ def stripe_webhook():
         return jsonify({'error': 'Invalid webhook'}), 400
 
     if event['type'] == 'checkout.session.completed':
-        session = event['data']['object']
-        customer_id = session.get('customer')
-        subscription_id = session.get('subscription')
-        uid = session.get('metadata', {}).get('uid')
+        session_data = event['data']['object']
+        customer_id = session_data.get('customer')
+        subscription_id = session_data.get('subscription')
+        uid = session_data.get('metadata', {}).get('uid')
         if uid:
             user_ref = db.collection('users').document(uid)
             user_ref.set({
@@ -211,10 +226,11 @@ def stripe_webhook():
                 'last_credit_reset': datetime.now(timezone.utc).isoformat()
             }, merge=True)
             logger.info(f'User {uid} upgraded to premium')
+
     elif event['type'] == 'customer.subscription.deleted':
         customer_id = event['data']['object']['customer']
-        user_ref = db.collection('users').where('stripe_customer_id', '==', customer_id).limit(1).stream()
-        for user in user_ref:
+        user_query = db.collection('users').where('stripe_customer_id', '==', customer_id).limit(1).stream()
+        for user in user_query:
             user_ref = db.collection('users').document(user.id)
             user_ref.set({
                 'subscription_status': 'free',
@@ -226,6 +242,7 @@ def stripe_webhook():
 
     return jsonify({'status': 'success'}), 200
 
+# === Recipe Generation ===
 @app.route('/generate', methods=['POST'])
 def generate_recipe():
     decoded_token, error = verify_token()
@@ -241,6 +258,7 @@ def generate_recipe():
         'last_credit_reset': None
     }
 
+    # Credit reset daily logic for free users
     if user_data.get('subscription_status') == 'free':
         now = datetime.now(timezone.utc)
         last_reset = user_data.get('last_credit_reset')
@@ -316,6 +334,7 @@ def generate_recipe():
         logger.error(f"OpenAI error: {e}")
         return jsonify({"error": "openai_error", "message": str(e)}), 500
 
+# === Cookbook: list recipes ===
 @app.route('/cookbook', methods=['GET'])
 def cookbook():
     decoded_token, error = verify_token()
@@ -334,36 +353,15 @@ def cookbook():
         'timestamp': r.to_dict().get('timestamp')
     } for r in recipes])
 
-@app.route('/google/login')
-def google_login():
-    nonce = secrets.token_urlsafe(16)
-    session['nonce'] = nonce
-    redirect_uri = url_for('google_callback', _external=True)
-    return jsonify({'redirect_url': f"https://accounts.google.com/o/oauth2/v2/auth?"
-                                  f"client_id={os.environ.get('GOOGLE_CLIENT_ID')}&"
-                                  f"redirect_uri={redirect_uri}&"
-                                  f"response_type=code&"
-                                  f"scope=openid%20email%20profile&"
-                                  f"nonce={nonce}"})
+# === Static frontend serving ===
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve_frontend(path):
+    dist_dir = os.path.join(basedir, '..', 'frontend', 'dist')
+    if path != "" and os.path.exists(os.path.join(dist_dir, path)):
+        return send_from_directory(dist_dir, path)
+    return send_from_directory(dist_dir, 'index.html')
 
-@app.route('/google/callback')
-def google_callback():
-    try:
-        code = request.args.get('code')
-        if not code:
-            return jsonify({'error': 'No code provided'}), 400
-
-        # Exchange code for token (handled client-side in modern Firebase setups)
-        # Here we assume the frontend sends the ID token in subsequent requests
-        return redirect(f"{frontend_url}/dashboard")
-    except Exception as e:
-        logger.error(f'Google OAuth error: {e}')
-        return jsonify({'error': 'Google login failed'}), 400
-
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(f"{frontend_url}")
-
+# Run app
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
