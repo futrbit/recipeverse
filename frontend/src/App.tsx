@@ -1,66 +1,33 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-
+import React from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
-import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Cookbook from './pages/Cookbook';
+import Pricing from './pages/Pricing';
+import { auth } from './firebase';
 
-// Simple auth context (could improve with Context API or Redux)
 const App: React.FC = () => {
-  const [loading, setLoading] = useState(true);
-  const [loggedIn, setLoggedIn] = useState(false);
-
-  useEffect(() => {
-    fetch('/api/user-info', {
-      credentials: 'include', // important for cookie session
-    })
-      .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('Not authenticated');
-      })
-      .then(() => {
-        setLoggedIn(true);
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoggedIn(false);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) return <div>Loading...</div>;
+  const isAuthenticated = !!localStorage.getItem('idToken');
 
   return (
     <Router>
       <Routes>
-        {/* If user logged in, redirect landing & login to dashboard */}
-        <Route
-          path="/landing"
-          element={loggedIn ? <Navigate to="/dashboard" replace /> : <Landing />}
-        />
-        <Route
-          path="/login"
-          element={loggedIn ? <Navigate to="/dashboard" replace /> : <Login />}
-        />
-
-        {/* Dashboard protected route */}
+        <Route path="/" element={<Landing />} />
         <Route
           path="/dashboard"
-          element={loggedIn ? <Dashboard /> : <Navigate to="/landing" replace />}
+          element={isAuthenticated ? <Dashboard /> : <Navigate to="/" />}
         />
-
-        {/* Default root redirect */}
         <Route
-          path="/"
-          element={loggedIn ? <Navigate to="/dashboard" replace /> : <Navigate to="/landing" replace />}
+          path="/cookbook"
+          element={isAuthenticated ? <Cookbook /> : <Navigate to="/" />}
         />
-
-        {/* Catch-all redirect to landing */}
-        <Route path="*" element={<Navigate to="/landing" replace />} />
+        <Route
+          path="/pricing"
+          element={isAuthenticated ? <Pricing /> : <Navigate to="/" />}
+        />
       </Routes>
     </Router>
   );
 };
 
 export default App;
-
