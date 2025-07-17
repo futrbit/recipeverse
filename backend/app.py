@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, session, redirect, url_for, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, abort
 from flask_cors import CORS
 from dotenv import load_dotenv
 import firebase_admin
@@ -13,35 +13,44 @@ import secrets
 # Load environment variables
 load_dotenv()
 basedir = os.path.abspath(os.path.dirname(__file__))
-frontend_url = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onrender.com").strip()
-print(f"Using FRONTEND_URL: {repr(frontend_url)}")
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://recipeverse-frontend.onrender.com").strip()
+
+print(f"Using FRONTEND_URL: {repr(FRONTEND_URL)}")
 
 # Initialize Flask app
 app = Flask(__name__, instance_relative_config=True)
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(16))
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', secrets.token_hex(32))
 
-# Enable CORS for frontend and local dev with proper headers and methods
+# Setup CORS with support for credentials and proper headers/methods
 CORS(
     app,
     supports_credentials=True,
-    origins=[
-        frontend_url,
-        "http://localhost:5173"  # local dev Vite server
-    ],
+    origins=[FRONTEND_URL, "http://localhost:5173"],
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 )
 
 # Setup logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger("RecipeVerseBackend")
 
-# Initialize Firebase Admin SDK with service account from env
+# Validate and parse Firebase private key correctly
+firebase_private_key = os.environ.get("FIREBASE_PRIVATE_KEY")
+if firebase_private_key:
+    firebase_private_key = firebase_private_key.replace('\\n', '\n')
+else:
+    logger.error("Missing FIREBASE_PRIVATE_KEY environment variable.")
+
+# Firebase credentials dictionary
 cred_dict = {
     "type": os.environ.get("FIREBASE_TYPE"),
     "project_id": os.environ.get("FIREBASE_PROJECT_ID"),
     "private_key_id": os.environ.get("FIREBASE_PRIVATE_KEY_ID"),
-    "private_key": os.environ.get("FIREBASE_PRIVATE_KEY").replace('\\n', '\n'),
+    "private_key": firebase_private_key,
     "client_email": os.environ.get("FIREBASE_CLIENT_EMAIL"),
     "client_id": os.environ.get("FIREBASE_CLIENT_ID"),
     "auth_uri": os.environ.get("FIREBASE_AUTH_URI"),
@@ -50,39 +59,54 @@ cred_dict = {
     "client_x509_cert_url": os.environ.get("FIREBASE_CLIENT_CERT_URL"),
     "universe_domain": os.environ.get("FIREBASE_UNIVERSE_DOMAIN"),
 }
-cred = credentials.Certificate(cred_dict)
-firebase_admin.initialize_app(cred)
-db = firestore.client()
 
-# Initialize OpenAI & Stripe
+# Initialize Firebase
+try:
+    cred = credentials.Certificate(cred_dict)
+    firebase_admin.initialize_app(cred)
+    db = firestore.client()
+    logger.info("Initialized Firebase Admin SDK.")
+except Exception as e:
+    logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
+    raise e
+
+# Initialize OpenAI & Stripe keys
 openai.api_key = os.environ.get("OPENAI_API_KEY")
-stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
-# Helper to verify Firebase ID token in Authorization header
+if not openai.api_key:
+    logger.warning("OPENAI_API_KEY is not set.")
+
+if not stripe.api_key:
+    logger.warning("STRIPE_SECRET_KEY is not set.")
+
+# --- Helper: Verify Firebase ID token ---
 def verify_token():
-    id_token = request.headers.get('Authorization')
-    if not id_token or not id_token.startswith('Bearer '):
-        return None, jsonify({"error": "No token provided"}), 401
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return None, jsonify({"error": "Authorization header missing or invalid"}), 401
+    token = auth_header.split('Bearer ')[1]
     try:
-        token = id_token.split('Bearer ')[1]
-        decoded_token = auth.verify_id_token(token)
-        return decoded_token, None
+        decoded = auth.verify_id_token(token)
+        return decoded, None
     except Exception as e:
-        logger.error(f"Token verification failed: {e}")
-        return None, jsonify({"error": "Invalid token"}), 401
+        logger.warning(f"Token verification failed: {e}")
+        return None, jsonify({"error": "Invalid or expired token"}), 401
 
-# === Authentication Routes ===
+# === Routes ===
 
 @app.route('/api/login', methods=['POST'])
-def firebase_login():
+def api_login():
+    data = request.get_json(force=True)
+    id_token = data.get('token')
+    if not id_token:
+        return jsonify({"error": "Missing token in request body"}), 400
     try:
-        id_token = request.json.get('token')
-        decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token['uid']
-        email = decoded_token.get('email')
-        name = decoded_token.get('name', 'User')
+        decoded = auth.verify_id_token(id_token)
+        uid = decoded.get('uid')
+        email = decoded.get('email')
+        name = decoded.get('name', 'User')
 
-        # Store/update user in Firestore
         user_ref = db.collection('users').document(uid)
         user_ref.set({
             "email": email,
@@ -97,19 +121,19 @@ def firebase_login():
         return jsonify({"error": "Invalid token"}), 401
 
 @app.route('/api/logout', methods=['POST'])
-def logout():
-    # Stateless token auth - frontend just deletes token
-    return jsonify({"message": "Logged out"})
+def api_logout():
+    # No server-side session to clear in stateless token auth
+    return jsonify({"message": "Logged out"}), 200
 
-@app.route('/api/user-info')
-def user_info():
-    decoded_token, error = verify_token()
-    if error:
-        return error
-    uid = decoded_token['uid']
+@app.route('/api/user-info', methods=['GET'])
+def api_user_info():
+    decoded, err_response = verify_token()
+    if err_response:
+        return err_response
+    uid = decoded.get('uid')
     user_ref = db.collection('users').document(uid)
-    user = user_ref.get()
-    user_data = user.to_dict() if user.exists else {
+    user_doc = user_ref.get()
+    user_data = user_doc.to_dict() if user_doc.exists else {
         'credits': 3,
         'subscription_status': 'free',
         'api_calls': 0,
@@ -117,8 +141,8 @@ def user_info():
     }
     return jsonify({
         "uid": uid,
-        "email": decoded_token.get('email'),
-        "name": decoded_token.get('name', 'User'),
+        "email": decoded.get('email'),
+        "name": decoded.get('name', 'User'),
         "credits": user_data.get('credits', 3),
         "subscription_status": user_data.get('subscription_status', 'free'),
         "last_credit_reset": user_data.get('last_credit_reset'),
@@ -126,15 +150,15 @@ def user_info():
         "stripe_customer_id": user_data.get('stripe_customer_id')
     })
 
-@app.route('/api/user_credits')
-def get_credits():
-    decoded_token, error = verify_token()
-    if error:
-        return error
-    uid = decoded_token['uid']
+@app.route('/api/user_credits', methods=['GET'])
+def api_user_credits():
+    decoded, err_response = verify_token()
+    if err_response:
+        return err_response
+    uid = decoded.get('uid')
     user_ref = db.collection('users').document(uid)
-    user = user_ref.get()
-    user_data = user.to_dict() if user.exists else {
+    user_doc = user_ref.get()
+    user_data = user_doc.to_dict() if user_doc.exists else {
         'credits': 3,
         'subscription_status': 'free',
         'api_calls': 0,
@@ -143,68 +167,67 @@ def get_credits():
     return jsonify({
         "credits": user_data.get('credits', 3),
         "subscription_status": user_data.get('subscription_status', 'free'),
-        "email": decoded_token.get('email'),
+        "email": decoded.get('email'),
         "last_credit_reset": user_data.get('last_credit_reset'),
         "api_calls": user_data.get('api_calls', 0)
     })
 
-
-# === Pricing Plans ===
 @app.route('/pricing', methods=['GET'])
-def pricing():
-    decoded_token, error = verify_token()
-    if error:
-        return error
-    uid = decoded_token['uid']
+def api_pricing():
+    decoded, err_response = verify_token()
+    if err_response:
+        return err_response
+    uid = decoded.get('uid')
     user_ref = db.collection('users').document(uid)
-    user = user_ref.get()
-    user_data = user.to_dict() if user.exists else {}
-    pricing_plans = [
-        {'plan': 'Free', 'price': 0, 'credits': 3, 'features': ['3 daily recipes', 'Basic support']},
-        {'plan': 'Premium Monthly', 'price': 5.99, 'credits': 'Unlimited', 'features': ['Unlimited recipes', 'Priority support']},
-        {'plan': 'Premium Yearly', 'price': 49.99, 'credits': 'Unlimited', 'features': ['Unlimited recipes', 'Priority support', '10% discount']}
+    user_doc = user_ref.get()
+    user_data = user_doc.to_dict() if user_doc.exists else {}
+
+    plans = [
+        {"plan": "Free", "price": 0, "credits": 3, "features": ["3 daily recipes", "Basic support"]},
+        {"plan": "Premium Monthly", "price": 5.99, "credits": "Unlimited", "features": ["Unlimited recipes", "Priority support"]},
+        {"plan": "Premium Yearly", "price": 49.99, "credits": "Unlimited", "features": ["Unlimited recipes", "Priority support", "10% discount"]},
     ]
+
     return jsonify({
-        'plans': pricing_plans,
-        'user': {
-            'email': decoded_token.get('email'),
-            'subscription_status': user_data.get('subscription_status', 'free'),
-            'stripe_customer_id': user_data.get('stripe_customer_id')
+        "plans": plans,
+        "user": {
+            "email": decoded.get('email'),
+            "subscription_status": user_data.get('subscription_status', 'free'),
+            "stripe_customer_id": user_data.get('stripe_customer_id')
         }
     })
 
-# === Stripe Checkout ===
 @app.route('/stripe/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-    decoded_token, error = verify_token()
-    if error:
-        return error
+    decoded, err_response = verify_token()
+    if err_response:
+        return err_response
     try:
-        data = request.get_json() or {}
+        data = request.get_json(force=True)
         plan = data.get('plan')
-        price_ids = {
-            'Premium Monthly': os.environ.get('STRIPE_MONTHLY_PRICE_ID'),
-            'Premium Yearly': os.environ.get('STRIPE_YEARLY_PRICE_ID')
+        price_map = {
+            "Premium Monthly": os.environ.get('STRIPE_MONTHLY_PRICE_ID'),
+            "Premium Yearly": os.environ.get('STRIPE_YEARLY_PRICE_ID')
         }
-        if plan not in price_ids or not price_ids[plan]:
-            return jsonify({'error': 'Invalid plan selected.'}), 400
+        if plan not in price_map or not price_map[plan]:
+            return jsonify({"error": "Invalid plan selected."}), 400
 
         session = stripe.checkout.Session.create(
-            customer_email=decoded_token['email'],
+            customer_email=decoded.get('email'),
             payment_method_types=['card'],
             line_items=[{
-                'price': price_ids[plan],
+                'price': price_map[plan],
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url=f"{frontend_url}/dashboard?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url=f"{frontend_url}/pricing",
-            metadata={'uid': decoded_token['uid']}
+            success_url=f"{FRONTEND_URL}/dashboard?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{FRONTEND_URL}/pricing",
+            metadata={'uid': decoded.get('uid')}
         )
-        return jsonify({'id': session.id})
+        return jsonify({"id": session.id})
     except Exception as e:
-        logger.error(f'Stripe checkout error: {e}')
-        return jsonify({'error': str(e)}), 500
+        logger.error(f"Stripe checkout session error: {e}")
+        return jsonify({"error": "Failed to create checkout session"}), 500
 
 @app.route('/stripe/webhook', methods=['POST'])
 def stripe_webhook():
@@ -215,79 +238,79 @@ def stripe_webhook():
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
     except (ValueError, stripe.error.SignatureVerificationError) as e:
-        logger.error(f'Webhook error: {e}')
-        return jsonify({'error': 'Invalid webhook'}), 400
+        logger.error(f"Stripe webhook error: {e}")
+        return jsonify({"error": "Invalid webhook signature"}), 400
 
+    # Handle relevant webhook events
     if event['type'] == 'checkout.session.completed':
-        session_data = event['data']['object']
-        customer_id = session_data.get('customer')
-        subscription_id = session_data.get('subscription')
-        uid = session_data.get('metadata', {}).get('uid')
+        session_obj = event['data']['object']
+        uid = session_obj.get('metadata', {}).get('uid')
         if uid:
             user_ref = db.collection('users').document(uid)
             user_ref.set({
-                'stripe_customer_id': customer_id,
-                'subscription_id': subscription_id,
-                'subscription_status': 'premium',
-                'credits': 9999,
-                'last_credit_reset': datetime.now(timezone.utc).isoformat()
+                "stripe_customer_id": session_obj.get('customer'),
+                "subscription_id": session_obj.get('subscription'),
+                "subscription_status": "premium",
+                "credits": 9999,
+                "last_credit_reset": datetime.now(timezone.utc).isoformat()
             }, merge=True)
-            logger.info(f'User {uid} upgraded to premium')
+            logger.info(f"User {uid} upgraded to premium")
 
     elif event['type'] == 'customer.subscription.deleted':
-        customer_id = event['data']['object']['customer']
-        user_query = db.collection('users').where('stripe_customer_id', '==', customer_id).limit(1).stream()
-        for user in user_query:
+        customer_id = event['data']['object'].get('customer')
+        users = db.collection('users').where('stripe_customer_id', '==', customer_id).limit(1).stream()
+        for user in users:
             user_ref = db.collection('users').document(user.id)
             user_ref.set({
-                'subscription_status': 'free',
-                'credits': 3,
-                'subscription_id': None,
-                'last_credit_reset': datetime.now(timezone.utc).isoformat()
+                "subscription_status": "free",
+                "credits": 3,
+                "subscription_id": None,
+                "last_credit_reset": datetime.now(timezone.utc).isoformat()
             }, merge=True)
-            logger.info(f'User {user.id} downgraded to free')
+            logger.info(f"User {user.id} downgraded to free")
 
-    return jsonify({'status': 'success'}), 200
+    return jsonify({"status": "success"}), 200
 
-# === Recipe Generation ===
 @app.route('/generate', methods=['POST'])
 def generate_recipe():
-    decoded_token, error = verify_token()
-    if error:
-        return error
-    uid = decoded_token['uid']
+    decoded, err_response = verify_token()
+    if err_response:
+        return err_response
+
+    uid = decoded.get('uid')
     user_ref = db.collection('users').document(uid)
-    user = user_ref.get()
-    user_data = user.to_dict() if user.exists else {
-        'credits': 3,
-        'subscription_status': 'free',
-        'api_calls': 0,
-        'last_credit_reset': None
+    user_doc = user_ref.get()
+    user_data = user_doc.to_dict() if user_doc.exists else {
+        "credits": 3,
+        "subscription_status": "free",
+        "api_calls": 0,
+        "last_credit_reset": None
     }
 
-    # Credit reset daily logic for free users
+    # Reset daily credits if free user and past reset date
     if user_data.get('subscription_status') == 'free':
         now = datetime.now(timezone.utc)
         last_reset = user_data.get('last_credit_reset')
         last_reset_date = datetime.fromisoformat(last_reset).date() if last_reset else None
-        if last_reset_date is None or last_reset_date < now.date():
+        if not last_reset_date or last_reset_date < now.date():
             user_data['credits'] = 3
             user_data['last_credit_reset'] = now.isoformat()
             user_ref.set(user_data, merge=True)
-            logger.info(f"Credits reset to 3 for user {uid}")
+            logger.info(f"Credits reset for user {uid}")
 
         if user_data.get('credits', 0) <= 0:
             return jsonify({
                 "error": "no_credits",
-                "message": "You have no credits left. Upgrade to Premium for unlimited recipes!"
+                "message": "You have no credits left. Upgrade to Premium for unlimited recipes."
             }), 403
 
         user_data['credits'] -= 1
         user_data['api_calls'] = user_data.get('api_calls', 0) + 1
         user_ref.set(user_data, merge=True)
-        logger.info(f"Credit deducted for {uid}. Remaining: {user_data['credits']}")
+        logger.info(f"User {uid} used one credit, remaining: {user_data['credits']}")
 
-    data = request.get_json() or {}
+    # Parse request data
+    data = request.get_json(force=True)
     ingredients = data.get('ingredients', [])
     dietary = data.get('dietary', [])
     spice_level = data.get('spice_level', 3)
@@ -297,6 +320,7 @@ def generate_recipe():
     cuisine = data.get('cuisine', 'Random')
 
     if not ingredients:
+        # Refund credit if used
         if user_data.get('subscription_status') != 'premium':
             user_data['credits'] += 1
             user_ref.set(user_data, merge=True)
@@ -304,15 +328,16 @@ def generate_recipe():
 
     prompt = (
         f"Generate an easy {cuisine} recipe for {portions} portions with: {', '.join(ingredients)}. "
-        f"Dietary: {', '.join(dietary) or 'None'}, spice: {spice_level}/5, time: {cook_time} min, difficulty: {difficulty}. "
-        f"Include title, ingredients w/ amounts, steps, and per-serving nutrition."
+        f"Dietary restrictions: {', '.join(dietary) or 'None'}. Spice level {spice_level}/5. "
+        f"Cook time about {cook_time} minutes. Difficulty: {difficulty}. "
+        f"Include title, ingredients with amounts, step-by-step instructions, and per-serving nutrition info."
     )
 
     try:
         response = openai.ChatCompletion.create(
             model="gpt-4o-mini",
             messages=[
-                {"role": "system", "content": "You are a helpful recipe assistant. Format recipes with a title, ingredients with quantities, instructions, and nutrition."},
+                {"role": "system", "content": "You are a helpful recipe assistant."},
                 {"role": "user", "content": prompt}
             ],
             max_tokens=800,
@@ -320,55 +345,54 @@ def generate_recipe():
         )
         recipe_text = response['choices'][0]['message']['content']
 
-        recipe_data = {
-            'user_id': uid,
-            'title': "Generated Recipe",
-            'cuisine': cuisine if cuisine != 'Random' else None,
-            'dietary': ', '.join(dietary) if dietary else None,
-            'ingredients': ', '.join(ingredients),
-            'instructions': recipe_text,
-            'nutrition': None,
-            'timestamp': datetime.now(timezone.utc).isoformat()
+        recipe_doc = {
+            "user_id": uid,
+            "title": "Generated Recipe",
+            "cuisine": cuisine if cuisine != "Random" else None,
+            "dietary": ', '.join(dietary) if dietary else None,
+            "ingredients": ', '.join(ingredients),
+            "instructions": recipe_text,
+            "nutrition": None,
+            "timestamp": datetime.now(timezone.utc).isoformat()
         }
-        db.collection('recipes').add(recipe_data)
 
+        db.collection('recipes').add(recipe_doc)
         return jsonify({"recipe_text": recipe_text, "credits": user_data.get('credits', 3), "api_calls": user_data.get('api_calls', 0)})
 
     except Exception as e:
+        logger.error(f"OpenAI API error: {e}")
+        # Refund credit if generation failed for free user
         if user_data.get('subscription_status') != 'premium':
             user_data['credits'] += 1
             user_ref.set(user_data, merge=True)
-        logger.error(f"OpenAI error: {e}")
         return jsonify({"error": "openai_error", "message": str(e)}), 500
 
-# === Cookbook: list recipes ===
 @app.route('/cookbook', methods=['GET'])
 def cookbook():
-    decoded_token, error = verify_token()
-    if error:
-        return error
-    uid = decoded_token['uid']
-    recipes = db.collection('recipes').where('user_id', '==', uid).order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
-    return jsonify([{
-        'id': r.id,
-        'title': r.to_dict().get('title'),
-        'cuisine': r.to_dict().get('cuisine'),
-        'dietary': r.to_dict().get('dietary'),
-        'ingredients': r.to_dict().get('ingredients'),
-        'instructions': r.to_dict().get('instructions'),
-        'nutrition': r.to_dict().get('nutrition'),
-        'timestamp': r.to_dict().get('timestamp')
-    } for r in recipes])
+    decoded, err_response = verify_token()
+    if err_response:
+        return err_response
+    uid = decoded.get('uid')
+    recipes_query = db.collection('recipes').where('user_id', '==', uid).order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+    recipes = []
+    for doc in recipes_query:
+        r = doc.to_dict()
+        r['id'] = doc.id
+        recipes.append(r)
+    return jsonify(recipes)
 
-# === Static frontend serving ===
+# Serve static frontend files for any other route (SPA)
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve_frontend(path):
     dist_dir = os.path.join(basedir, '..', 'frontend', 'dist')
-    if path != "" and os.path.exists(os.path.join(dist_dir, path)):
+    if path and os.path.exists(os.path.join(dist_dir, path)):
         return send_from_directory(dist_dir, path)
-    return send_from_directory(dist_dir, 'index.html')
+    else:
+        return send_from_directory(dist_dir, 'index.html')
 
-# Run app
+# Run Flask app
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 10000)))
+    port = int(os.environ.get('PORT', 10000))
+    logger.info(f"Starting Flask app on port {port}")
+    app.run(host='0.0.0.0', port=port)
