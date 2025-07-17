@@ -2,13 +2,23 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { auth, signOutUser } from '../firebase';
-import Cook from './Cook';
+import Cook from './Cook.tsx';
 import { UserInfo, PricingPlan } from '../types';
 
 const containerStyle: React.CSSProperties = {
   padding: '2rem',
   maxWidth: '1200px',
   margin: '0 auto',
+};
+
+const btnStyle: React.CSSProperties = {
+  padding: '0.5rem 1rem',
+  margin: '0.5rem',
+  backgroundColor: '#4285F4',
+  color: 'white',
+  border: 'none',
+  borderRadius: '4px',
+  cursor: 'pointer',
 };
 
 const Dashboard: React.FC = () => {
@@ -80,13 +90,19 @@ const Dashboard: React.FC = () => {
     <div style={containerStyle}>
       <h1>Welcome, {userInfo.name}</h1>
       <p>Credits: {userInfo.credits} | Subscription: {userInfo.subscription_status}</p>
-      <button onClick={handleLogout} style={{ marginBottom: '1rem' }}>
+      <button style={btnStyle} onClick={handleLogout}>
         Log Out
       </button>
       <nav>
-        <button onClick={() => navigate('/dashboard')}>Generate Recipe</button>
-        <button onClick={() => navigate('/cookbook')}>Cookbook</button>
-        <button onClick={() => navigate('/pricing')}>Pricing</button>
+        <button style={btnStyle} onClick={() => navigate('/dashboard')}>
+          Generate Recipe
+        </button>
+        <button style={btnStyle} onClick={() => navigate('/cookbook')}>
+          Cookbook
+        </button>
+        <button style={btnStyle} onClick={() => navigate('/pricing')}>
+          Pricing
+        </button>
       </nav>
       <h2>Generate a Recipe</h2>
       <Cook />
@@ -102,7 +118,9 @@ const Dashboard: React.FC = () => {
             ))}
           </ul>
           {userInfo.subscription_status !== 'premium' && plan.plan !== 'Free' && (
-            <button onClick={() => handleUpgrade(plan.plan)}>Upgrade to {plan.plan}</button>
+            <button style={btnStyle} onClick={() => handleUpgrade(plan.plan)}>
+              Upgrade to {plan.plan}
+            </button>
           )}
         </div>
       ))}
