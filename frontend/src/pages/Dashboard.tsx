@@ -1,79 +1,90 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { auth, signOutUser } from '../firebase';
-import Cook from './Cook';
-import { UserInfo } from '../types';
-
-const containerStyle: React.CSSProperties = {
-  padding: '2rem',
-  maxWidth: '1200px',
-  margin: '0 auto',
-};
-
-const btnStyle: React.CSSProperties = {
-  padding: '0.5rem 1rem',
-  margin: '0.5rem',
-  backgroundColor: '#4285F4',
-  color: 'white',
-  border: 'none',
-  borderRadius: '4px',
-  cursor: 'pointer',
-};
+import { useNavigate } from 'react-router-dom';
+import logo from '../assets/logo.png'; // adjust this if your path is different
 
 const Dashboard: React.FC = () => {
+  const [user, setUser] = useState<{ username: string; credits: number; subscription_status: string } | null>(null);
   const navigate = useNavigate();
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
   useEffect(() => {
-    const fetchUserInfo = async () => {
-      const idToken = localStorage.getItem('idToken');
-      if (!idToken) {
-        navigate('/');
-        return;
-      }
+    const fetchUser = async () => {
       try {
-        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/user-info`, {
-          headers: { Authorization: `Bearer ${idToken}` },
-        });
-        setUserInfo(response.data);
-      } catch (error) {
-        console.error('Error fetching user info:', error);
-        navigate('/');
+        const response = await axios.get('http://localhost:5000/api/user_credits', { withCredentials: true });
+        setUser(response.data);
+      } catch (err) {
+        console.error('Failed to fetch user:', err);
       }
     };
-
-    fetchUserInfo();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await signOutUser();
-      navigate('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
-  };
-
-  if (!userInfo) return <div>Loading...</div>;
+    fetchUser();
+  }, []);
 
   return (
-    <div style={containerStyle}>
-      <h1>Welcome, {userInfo.name}</h1>
-      <p>Credits: {userInfo.credits} | Subscription: {userInfo.subscription_status}</p>
-      <button style={btnStyle} onClick={handleLogout}>
-        Log Out
+    <div className="container" style={{ textAlign: 'center', padding: '2rem' }}>
+      <img
+        src={logo}
+        alt="RecipeVerse Logo"
+        style={{
+          width: '140px',
+          marginBottom: '1.5rem',
+        }}
+      />
+
+      {user ? (
+        <>
+          <h1>Hello {user.username} 👋</h1>
+          <p style={{ color: '#218838', fontSize: '1.2rem' }}>You have {user.credits} credits left.</p>
+          {user.subscription_status === 'free' && (
+            <p>
+              <button
+                onClick={() => navigate('/pricing')}
+                style={{
+                  color: '#218838',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  textDecoration: 'underline',
+                }}
+              >
+                Subscribe for unlimited recipes!
+              </button>
+            </p>
+          )}
+        </>
+      ) : (
+        <>
+          <h1 style={{ fontSize: '2rem', color: '#333' }}>Welcome to <span style={{ color: '#218838' }}>RecipeVerse</span></h1>
+        </>
+      )}
+
+      <p
+        style={{
+          marginTop: '2rem',
+          fontFamily: "'Press Start 2P', cursive", // Arcade-style font (optional: make sure to load this font in index.html)
+          fontSize: '0.9rem',
+          color: '#666',
+        }}
+      >
+        Discover, cook, and share. Your AI kitchen awaits.<br />
+        Visit <a href="http://localhost:5000/cook" style={{ color: '#218838' }}>our backend generator</a> to get started.
+      </p>
+
+      <button
+        onClick={() => navigate('/pricing')}
+        style={{
+          marginTop: '1.5rem',
+          padding: '0.6rem 1.2rem',
+          fontSize: '1rem',
+          backgroundColor: '#218838',
+          color: '#fff',
+          border: 'none',
+          borderRadius: '6px',
+          cursor: 'pointer',
+        }}
+      >
+        Go to Premium
       </button>
-      <nav>
-        <button style={btnStyle} onClick={() => navigate('/dashboard')}>
-          Generate Recipe
-        </button>
-        <button style={btnStyle} onClick={() => navigate('/cookbook')}>
-          Cookbook
-        </button>
-      </nav>
-      <h2>Generate a Recipe</h2>
-      <Cook />
     </div>
   );
 };
