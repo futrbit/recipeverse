@@ -19,75 +19,20 @@ const Dashboard: React.FC = () => {
   }, []);
 
   return (
-    <div className="container" style={{ textAlign: 'center', padding: '2rem' }}>
-      <img
-        src="/static/logo.png"
-        alt="RecipeVerse Logo"
-        style={{
-          width: '140px',
-          marginBottom: '1.5rem',
-        }}
-      />
-
+    <div className="container">
       {user ? (
         <>
           <h1>Hello {user.username} 👋</h1>
-          <p style={{ color: '#218838', fontSize: '1.2rem' }}>You have {user.credits} credits left.</p>
+          <p style={{ color: '#218838' }}>You have {user.credits} credits left.</p>
           {user.subscription_status === 'free' && (
-            <p>
-              <button
-                onClick={() => navigate('/pricing')}
-                style={{
-                  color: '#218838',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '1rem',
-                  textDecoration: 'underline',
-                }}
-              >
-                Subscribe for unlimited recipes!
-              </button>
-            </p>
+            <p><button onClick={() => navigate('/pricing')} style={{ color: '#218838', background: 'none', border: 'none', cursor: 'pointer' }}>Subscribe for unlimited recipes!</button></p>
           )}
         </>
       ) : (
-        <>
-          <h1 style={{ fontSize: '2rem', color: '#333' }}>
-            Welcome to <span style={{ color: '#218838' }}>RecipeVerse</span>
-          </h1>
-        </>
+        <h1>Welcome to RecipeVerse</h1>
       )}
-
-      <p
-        style={{
-          marginTop: '2rem',
-          fontFamily: "'Press Start 2P', cursive", // optional arcade font
-          fontSize: '0.9rem',
-          color: '#666',
-          lineHeight: '1.6',
-        }}
-      >
-        Discover, cook, and share.<br />
-        Your AI-powered kitchen awaits.<br />
-        Visit <a href="http://localhost:5000/cook" style={{ color: '#218838' }}>our recipe generator</a> to get cooking!
-      </p>
-
-      <button
-        onClick={() => navigate('/pricing')}
-        style={{
-          marginTop: '1.5rem',
-          padding: '0.6rem 1.2rem',
-          fontSize: '1rem',
-          backgroundColor: '#218838',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '6px',
-          cursor: 'pointer',
-        }}
-      >
-        Go to Premium
-      </button>
+      <p>Placeholder for recipe generator UI. Visit <a href="http://localhost:5000/cook">backend recipe generator</a> for now.</p>
+      <button onClick={() => navigate('/pricing')}>Go to Premium</button>
     </div>
   );
 };
