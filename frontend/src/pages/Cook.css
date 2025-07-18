@@ -1,160 +1,323 @@
-.rv-container {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 0 15px rgba(0,0,0,0.08);
-  font-family: 'Segoe UI', sans-serif;
-}
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './Cook.css';
 
-h1, h2, h3 {
-  color: #333;
-}
+const Cook: React.FC = () => {
+  const [username, setUsername] = useState<string>('User');
+  const [credits, setCredits] = useState<number | null>(null);
+  const [ingredients, setIngredients] = useState<string[]>([]);
+  const [dietary, setDietary] = useState<string[]>([]);
+  const [spiceLevel, setSpiceLevel] = useState<number>(3);
+  const [portions, setPortions] = useState<number>(2);
+  const [cuisine, setCuisine] = useState<string>('');
+  const [customIng, setCustomIng] = useState<string>('');
+  const [recipe, setRecipe] = useState<string>('');
+  const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
-.ingredient-btn,
-.dietary-btn {
-  margin: 5px;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  background-color: #f2f2f2;
-  border: 1px solid #ccc;
-  cursor: pointer;
-  transition: transform 0.15s ease, background-color 0.2s;
-}
+  const navigate = useNavigate();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
-.ingredient-btn:hover,
-.dietary-btn:hover {
-  background-color: #e9f9ec;
-}
+  const meats = ['Chicken', 'Beef', 'Fish', 'Pork', 'Lamb', 'Shrimp', 'Tofu', 'Tempeh', 'Eggs'];
+  const vegetables = ['Carrot', 'Spinach', 'Onion', 'Tomato', 'Bell Pepper', 'Zucchini', 'Cauliflower', 'Broccoli'];
+  const spices = ['Garlic', 'Ginger', 'Basil', 'Oregano', 'Thyme', 'Cumin', 'Turmeric', 'Paprika', 'Chili Flakes'];
+  const carbs = ['Rice', 'Pasta', 'Potatoes', 'Couscous', 'Quinoa', 'Bread'];
+  const cuisines = ['Random', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Mediterranean', 'Thai', 'French', 'Japanese'];
+  const dietaryOptions = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'];
 
-.ingredient-btn.selected,
-.dietary-btn.selected {
-  background-color: #28a745;
-  color: white;
-  font-weight: bold;
-  transform: scale(1.08);
-  box-shadow: 0 0 8px rgba(40,167,69,0.4);
-}
+  // Fetch user info with token auth
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      const idToken = localStorage.getItem('idToken');
+      if (!idToken) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/user-info`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        if (!res.ok) throw new Error('Failed to fetch user info');
+        const data = await res.json();
+        setUsername(data.name || 'User'); // note: backend uses "name"
+        setCredits(data.credits);
+      } catch (err) {
+        console.error(err);
+        navigate('/login');
+      }
+    };
+    fetchUserInfo();
+  }, [BACKEND_URL, navigate]);
 
-.rv-input input[type="text"] {
-  padding: 0.5rem;
-  width: 60%;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-}
+  const toggleIngredient = (item: string) => {
+    setIngredients((prev) =>
+      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+    );
+  };
 
-.rv-input button {
-  padding: 0.5rem 1rem;
-  margin-left: 8px;
-  background-color: #28a745;
-  color: white;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: bold;
-}
+  const toggleDietary = (item: string) => {
+    setDietary((prev) =>
+      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+    );
+  };
 
-.rv-input button:hover {
-  background-color: #218838;
-}
+  const addCustomIngredient = () => {
+    const trimmed = customIng.trim();
+    if (trimmed && !ingredients.includes(trimmed)) {
+      setIngredients((prev) => [...prev, trimmed]);
+      setCustomIng('');
+    }
+  };
 
-.rv-slider {
-  margin-top: 1rem;
-}
+  const handleGenerate = async () => {
+    if (ingredients.length === 0) {
+      setError('Please select at least one ingredient.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setRecipe('Generating recipe...');
 
-.rv-selected {
-  margin: 0.5rem auto 2rem;
-  font-size: 1rem;
-  background: #f8f8f8;
-  padding: 1rem;
-  border-radius: 8px;
-}
+    const idToken = localStorage.getItem('idToken');
+    if (!idToken) {
+      navigate('/login');
+      return;
+    }
 
-#rv-generateBtn {
-  background-color: #ff4d4d;
-  color: white;
-  font-size: 1rem;
-  font-weight: bold;
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  margin: 0.5rem;
-  cursor: pointer;
-  transition: transform 0.1s, background-color 0.2s ease;
-}
+    try {
+      const response = await fetch(`${BACKEND_URL}/generate?t=${Date.now()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          ingredients,
+          dietary,
+          spice_level: spiceLevel,
+          cook_time: 30,
+          difficulty: 'easy',
+          portions,
+          cuisine: cuisine || 'Random',
+        }),
+      });
 
-#rv-generateBtn:hover {
-  background-color: #e43e3e;
-}
+      if (!response.ok) {
+        if (response.status === 403) {
+          navigate('/login');
+          return;
+        }
+        const err = await response.json();
+        throw new Error(err.message || 'Generation failed');
+      }
 
-#rv-generateBtn:active {
-  transform: scale(0.96);
-}
+      const data = await response.json();
+      setCredits(data.credits !== undefined ? data.credits : credits);
 
-#rv-resetBtn {
-  background-color: #ccc;
-  font-weight: bold;
-  border: none;
-  border-radius: 8px;
-  padding: 0.7rem 1.2rem;
-  cursor: pointer;
-  margin: 0.5rem;
-}
+      // Wrap nutrition section with a highlighted div for styling
+      let finalRecipe = data.recipe_text || 'Error: No recipe generated.';
+      finalRecipe = finalRecipe.replace(/(##\s*Nutrition[\s\S]*?)(?=##|$)/gi, (match: string) => {
+        return `<div class="nutrition-section">${match}</div>`;
+      });
 
-.rv-error {
-  color: #b30000;
-  background: #ffe0e0;
-  padding: 0.8rem;
-  margin-top: 1rem;
-  border-radius: 6px;
-}
+      setRecipe(finalRecipe);
+    } catch (e) {
+      console.error(e);
+      setError('Error: Failed to generate recipe. Please try again.');
+      setRecipe('');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-.rv-result {
-  background-color: #ffecec;
-  border: 2px solid #ff4d4d;
-  border-radius: 12px;
-  padding: 20px;
-  margin-top: 20px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  text-align: left;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #222;
-  max-width: 100%;
-}
+  const resetSelection = () => {
+    setIngredients([]);
+    setDietary([]);
+    setSpiceLevel(3);
+    setPortions(2);
+    setCuisine('');
+    setCustomIng('');
+    setRecipe('');
+    setError('');
+  };
 
-.rv-result strong {
-  font-weight: bold;
-}
+  const shareOnTwitter = () => {
+    const text = encodeURIComponent('Check out my custom recipe from RecipeVerse! 🍳 https://recipeverse.com');
+    window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank');
+  };
 
-.rv-result .nutrition-section {
-  background-color: #fff9d9;
-  border-left: 5px solid #ffc107;
-  padding: 12px;
-  margin-top: 20px;
-  border-radius: 6px;
-  font-weight: bold;
-  color: #333;
-}
+  const shareOnWhatsApp = () => {
+    const text = encodeURIComponent('Check out this cool recipe I made on RecipeVerse! 🍽️ https://recipeverse.com');
+    window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+  };
 
-.rv-share-section {
-  margin-top: 2rem;
-}
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText('https://recipeverse.com').then(() => {
+      alert('Link copied to clipboard!');
+    });
+  };
 
-.rv-share-section button {
-  background-color: #0077b5;
-  color: white;
-  margin: 5px;
-  border: none;
-  border-radius: 6px;
-  padding: 0.6rem 1.2rem;
-  cursor: pointer;
-  font-weight: bold;
-}
+  const goHome = () => {
+    navigate('/');
+  };
 
-.rv-share-section button:hover {
-  background-color: #005f8d;
-}
+  return (
+    <div className="rv-container">
+      <h1>Hello {username} 👋</h1>
+      <p>
+        You have <span>{credits !== null ? credits : '...'}</span> credits left.
+        {credits === 0 && (
+          <span> <a href="/pricing" style={{ color: '#218838' }}>Subscribe for unlimited recipes!</a></span>
+        )}
+      </p>
+
+      <label htmlFor="cuisine">Cuisine Style (optional):</label>
+      <select id="cuisine" value={cuisine} onChange={(e) => setCuisine(e.target.value)}>
+        {cuisines.map((c) => (
+          <option key={c} value={c === 'Random' ? '' : c}>{c}</option>
+        ))}
+      </select>
+
+      <h2>Meats & Proteins</h2>
+      <div className="rv-ingredients-group">
+        {meats.map((item) => (
+          <button
+            key={item}
+            className={`ingredient-btn ${ingredients.includes(item) ? 'selected' : ''}`}
+            onClick={() => toggleIngredient(item)}
+            disabled={loading}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <h2>Vegetables</h2>
+      <div className="rv-ingredients-group">
+        {vegetables.map((item) => (
+          <button
+            key={item}
+            className={`ingredient-btn ${ingredients.includes(item) ? 'selected' : ''}`}
+            onClick={() => toggleIngredient(item)}
+            disabled={loading}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <h2>Spices & Herbs</h2>
+      <div className="rv-ingredients-group">
+        {spices.map((item) => (
+          <button
+            key={item}
+            className={`ingredient-btn ${ingredients.includes(item) ? 'selected' : ''}`}
+            onClick={() => toggleIngredient(item)}
+            disabled={loading}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <h2>Base & Carbs</h2>
+      <div className="rv-ingredients-group">
+        {carbs.map((item) => (
+          <button
+            key={item}
+            className={`ingredient-btn ${ingredients.includes(item) ? 'selected' : ''}`}
+            onClick={() => toggleIngredient(item)}
+            disabled={loading}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <h2>➕ Add Your Own Ingredient</h2>
+      <div className="rv-input">
+        <input
+          type="text"
+          id="customIng"
+          placeholder="e.g., artichoke"
+          value={customIng}
+          onChange={(e) => setCustomIng(e.target.value)}
+          disabled={loading}
+        />
+        <button onClick={addCustomIngredient} disabled={loading}>Add Food</button>
+      </div>
+
+      <h2>Dietary Preferences</h2>
+      <div className="rv-ingredients-group">
+        {dietaryOptions.map((item) => (
+          <button
+            key={item}
+            className={`dietary-btn ${dietary.includes(item) ? 'selected' : ''}`}
+            onClick={() => toggleDietary(item)}
+            disabled={loading}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      <div className="rv-slider">
+        <label>Spiciness: <span>{spiceLevel}</span>/5</label>
+        <input
+          type="range"
+          min="1"
+          max="5"
+          value={spiceLevel}
+          onChange={(e) => setSpiceLevel(parseInt(e.target.value))}
+          disabled={loading}
+        />
+      </div>
+
+      <div className="rv-slider">
+        <label>Portions: <span>{portions}</span></label>
+        <input
+          type="range"
+          min="1"
+          max="10"
+          value={portions}
+          onChange={(e) => setPortions(parseInt(e.target.value))}
+          disabled={loading}
+        />
+      </div>
+
+      <h3>Selected Ingredients:</h3>
+      <div className="rv-selected">{ingredients.join(', ') || 'None selected'}</div>
+
+      <div className="rv-input">
+        <button id="rv-generateBtn" onClick={handleGenerate} disabled={loading}>
+          {loading ? 'Generating...' : 'Generate Recipe'}
+        </button>
+        <button id="rv-resetBtn" onClick={resetSelection} disabled={loading}>
+          Reset Selection
+        </button>
+      </div>
+
+      {error && <div className="rv-error" role="alert">{error}</div>}
+
+      <div
+        className="rv-result"
+        aria-live="polite"
+        style={{ display: recipe ? 'block' : 'none' }}
+        dangerouslySetInnerHTML={{ __html: recipe }}
+      />
+
+      {recipe && (
+        <div className="rv-share-section">
+          <h3>📣 Share your dish!</h3>
+          <button onClick={shareOnTwitter}>Share on X</button>
+          <button onClick={shareOnWhatsApp}>WhatsApp</button>
+          <button onClick={copyToClipboard}>Copy Link</button>
+          <button onClick={goHome} style={{ marginLeft: '10px' }}>Home</button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Cook;
+
