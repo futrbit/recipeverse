@@ -17,13 +17,13 @@ h1, h2, h3 {
   font-family: 'Orbitron', sans-serif;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  color: #c1440e; /* warm terracotta */
-  text-shadow: 0 0 8px #c1440e;
+  color: #58734e; /* olive green */
+  text-shadow: 0 0 8px #58734e;
 }
 
 /* Buttons for ingredients */
 .ingredient-btn, .dietary-btn {
-  background: linear-gradient(145deg, #c1440e, #8f320a); /* terracotta shades */
+  background: linear-gradient(145deg, #58734e, #47603b); /* olive green shades */
   border: none;
   border-radius: 8px;
   color: #f5f0e6; /* warm cream text */
@@ -32,8 +32,8 @@ h1, h2, h3 {
   font-weight: 700;
   cursor: pointer;
   box-shadow:
-    0 4px 6px rgba(193, 68, 14, 0.6),
-    0 0 8px rgba(193, 68, 14, 0.8);
+    0 4px 6px rgba(88, 115, 78, 0.6),
+    0 0 8px rgba(88, 115, 78, 0.8);
   transition:
     background 0.25s ease,
     box-shadow 0.25s ease,
@@ -44,10 +44,10 @@ h1, h2, h3 {
 }
 
 .ingredient-btn.selected, .dietary-btn.selected {
-  background: linear-gradient(145deg, #58734e, #47603b); /* earthy olive green */
+  background: linear-gradient(145deg, #c1440e, #8f320a); /* terracotta red */
   box-shadow:
-    0 6px 10px rgba(88, 115, 78, 0.9),
-    0 0 12px rgba(88, 115, 78, 1);
+    0 6px 10px rgba(193, 68, 14, 0.9),
+    0 0 12px rgba(193, 68, 14, 1);
   color: #f5f0e6;
   font-weight: 900;
 }
@@ -79,26 +79,26 @@ button:disabled {
 .rv-input input[type="text"] {
   padding: 8px 12px;
   border-radius: 6px;
-  border: 2px solid #c1440e; /* terracotta border */
+  border: 2px solid #58734e; /* olive green border */
   background: #4b423c; /* muted brown */
   color: #f5f0e6;
   font-family: 'Courier New', monospace;
   font-weight: 600;
   width: 60%;
   margin-right: 10px;
-  box-shadow: 0 0 8px #c1440e inset;
+  box-shadow: 0 0 8px #58734e inset;
   transition: border-color 0.3s ease;
 }
 
 .rv-input input[type="text"]:focus {
   outline: none;
-  border-color: #58734e; /* olive green focus */
-  box-shadow: 0 0 10px #58734e inset;
+  border-color: #c1440e; /* terracotta red focus */
+  box-shadow: 0 0 10px #c1440e inset;
 }
 
 /* Add Food and action buttons */
 .rv-input button {
-  background: linear-gradient(145deg, #c1440e, #8f320a);
+  background: linear-gradient(145deg, #58734e, #47603b);
   border: none;
   border-radius: 8px;
   color: #f5f0e6;
@@ -106,8 +106,8 @@ button:disabled {
   font-weight: 700;
   cursor: pointer;
   box-shadow:
-    0 4px 6px rgba(193, 68, 14, 0.6),
-    0 0 8px rgba(193, 68, 14, 0.8);
+    0 4px 6px rgba(88, 115, 78, 0.6),
+    0 0 8px rgba(88, 115, 78, 0.8);
   transition:
     background 0.25s ease,
     box-shadow 0.25s ease,
@@ -149,7 +149,7 @@ button:disabled {
 .rv-selected {
   margin: 12px 0;
   padding: 10px;
-  border: 2px solid #58734e;
+  border: 2px solid #c1440e;
   background: #4b423c;
   border-radius: 10px;
   font-family: 'Courier New', monospace;
@@ -188,19 +188,19 @@ button:disabled {
   margin-top: 18px;
   padding: 14px 18px;
   background: #4b423c;
-  border: 2px solid #c1440e;
+  border: 2px solid #58734e;
   border-radius: 12px;
   box-shadow:
-    0 0 12px #c1440e;
+    0 0 12px #58734e;
   font-family: 'Courier New', monospace;
-  color: #d87d3a;
+  color: #58734e;
   font-weight: 700;
   white-space: pre-wrap;
 }
 
 /* Share Section Buttons */
 .rv-share-section button {
-  background: linear-gradient(145deg, #58734e, #47603b);
+  background: linear-gradient(145deg, #c1440e, #8f320a);
   color: #f5f0e6;
   border: none;
   border-radius: 10px;
@@ -211,8 +211,8 @@ button:disabled {
   font-family: 'Orbitron', sans-serif;
   text-transform: uppercase;
   box-shadow:
-    0 4px 6px rgba(88, 115, 78, 0.9),
-    0 0 10px rgba(88, 115, 78, 1);
+    0 4px 6px rgba(193, 68, 14, 0.9),
+    0 0 10px rgba(193, 68, 14, 1);
   transition: transform 0.15s ease;
   user-select: none;
 }
@@ -220,8 +220,8 @@ button:disabled {
 .rv-share-section button:hover {
   transform: scale(1.1);
   box-shadow:
-    0 6px 12px rgba(88, 115, 78, 1),
-    0 0 14px rgba(88, 115, 78, 1);
+    0 6px 12px rgba(193, 68, 14, 1),
+    0 0 14px rgba(193, 68, 14, 1);
 }
 
 .rv-share-section button:active {
