@@ -11,6 +11,8 @@ const containerStyle: React.CSSProperties = {
   backgroundColor: '#f8f9fa',
   textAlign: 'center',
   padding: '2rem',
+  position: 'relative',
+  paddingBottom: '4rem', // space for footer
 };
 
 const buttonStyle: React.CSSProperties = {
@@ -25,16 +27,26 @@ const buttonStyle: React.CSSProperties = {
 };
 
 const logoStyle: React.CSSProperties = {
-  width: '140px',
+  width: '280px', // doubled size
   marginBottom: '1.5rem',
 };
 
 const tagLineStyle: React.CSSProperties = {
   fontFamily: "'Press Start 2P', cursive",
-  fontSize: '1.5rem',  // doubled font size here
+  fontSize: '1.5rem',
   color: '#555',
   marginTop: '1rem',
   lineHeight: '1.8',
+};
+
+const footerStyle: React.CSSProperties = {
+  position: 'absolute',
+  bottom: '1rem',
+  width: '100%',
+  textAlign: 'center',
+  color: '#888',
+  fontSize: '0.85rem',
+  fontFamily: 'Arial, sans-serif',
 };
 
 const Landing: React.FC = () => {
@@ -63,6 +75,10 @@ const Landing: React.FC = () => {
       <button style={buttonStyle} onClick={handleGoogleLogin}>
         Sign in with Google
       </button>
+
+      <footer style={footerStyle}>
+        &copy; {new Date().getFullYear()} RecipeVerse. All rights reserved.
+      </footer>
     </div>
   );
 };
