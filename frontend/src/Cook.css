@@ -1,137 +1,236 @@
 /* C:\Users\leebu\Desktop\recipeverse\frontend\src\Cook.css */
 .rv-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  font-family: Arial, sans-serif;
-  color: #333;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 25px; /* Slightly more padding for an airy feel */
+    background: #ffffff; /* Pure white background for a brighter base */
+    border-radius: 10px; /* Slightly more rounded corners */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Softer, more diffused shadow */
+    font-family: Arial, sans-serif;
+    color: #333; /* Keep dark gray for readability */
 }
 
 h1, h2, h3, p {
-  text-align: center;
+    text-align: center;
+    color: #222; /* Ensure headings are clear */
 }
 
 .rv-ingredients-group {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px; /* Slightly increased gap for more breathing room */
+    justify-content: center;
+    margin-bottom: 25px; /* More space below */
 }
 
 .ingredient-btn, .dietary-btn {
-  padding: 8px 15px;
-  border-radius: 6px;
-  border: none;
-  background-color: #28a745;
-  color: white;
-  cursor: pointer;
+    padding: 10px 18px; /* More generous padding for a lighter look */
+    border-radius: 8px; /* Slightly more rounded */
+    border: none;
+    background-color: #4CAF50; /* Brighter, more vibrant green */
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease; /* Add transition for hover */
+    font-weight: bold; /* Make button text stand out */
 }
 
 .ingredient-btn.selected, .dietary-btn.selected {
-  background-color: #218838;
+    background-color: #388E3C; /* Darker green when selected, but still vibrant */
+    transform: translateY(1px); /* Slight press effect when selected */
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); /* Subtle inner shadow for selected state */
 }
 
 .ingredient-btn:disabled, .dietary-btn:disabled {
-  background-color: #999;
-  cursor: not-allowed;
+    background-color: #B0B0B0; /* Lighter gray for disabled state */
+    cursor: not-allowed;
+    opacity: 0.7; /* Slight transparency */
 }
 
 #rv-generateBtn {
-  padding: 10px 20px;
-  background: orange;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+    padding: 12px 25px; /* Larger button */
+    background: #FF9800; /* Brighter, more energetic orange */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem; /* Larger font for primary action */
+    font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Soft shadow */
+}
+
+#rv-generateBtn:hover {
+    background: #FB8C00; /* Slightly darker orange on hover */
+    transform: translateY(-2px); /* Subtle lift */
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+#rv-generateBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 #rv-resetBtn {
-  padding: 10px 20px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+    padding: 12px 25px;
+    background: #F44336; /* Brighter red for reset */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+#rv-resetBtn:hover {
+    background: #E53935; /* Slightly darker red on hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+}
+
+#rv-resetBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .rv-input {
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-  margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 25px; /* More space below */
 }
 
 .rv-input input, select {
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid #ccc;
+    padding: 0.6rem 0.8rem; /* More padding inside inputs */
+    border-radius: 6px; /* Slightly more rounded inputs */
+    border: 1px solid #c0c0c0; /* Lighter border for inputs */
+    outline: none; /* Remove default focus outline */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.rv-input input:focus, .rv-input select:focus {
+    border-color: #88BBDD; /* Light blue border on focus */
+    box-shadow: 0 0 0 3px rgba(136, 187, 221, 0.3); /* Soft glow on focus */
 }
 
 .rv-slider {
-  margin: 20px 0;
-  text-align: center;
+    margin: 25px 0; /* More vertical margin */
+    text-align: center;
+    color: #444; /* Slightly lighter text for slider label */
 }
 
 .rv-slider input[type="range"] {
-  width: 200px;
+    width: 220px; /* Slightly wider slider */
+    -webkit-appearance: none; /* Remove default browser styling for range input */
+    appearance: none;
+    height: 8px; /* Thinner track */
+    background: #E0E0E0; /* Lighter track color */
+    border-radius: 5px;
+    outline: none;
+    opacity: 0.7;
+    transition: opacity .2s;
 }
 
+.rv-slider input[type="range"]:hover {
+    opacity: 1;
+}
+
+/* Thumb (the draggable part) */
+.rv-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px; /* Larger thumb */
+    height: 20px;
+    border-radius: 50%; /* Circular thumb */
+    background: #64B5F6; /* Bright blue thumb */
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.rv-slider input[type="range"]::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #64B5F6;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+
 .rv-selected {
-  text-align: center;
-  margin-bottom: 20px;
+    text-align: center;
+    margin-bottom: 25px; /* More space below */
+    font-size: 1.05rem; /* Slightly larger selected text */
+    color: #555;
 }
 
 .rv-error {
-  color: #dc3545;
-  text-align: center;
-  margin-top: 10px;
+    color: #EF5350; /* Brighter red for errors */
+    text-align: center;
+    margin-top: 15px; /* More space above */
+    font-weight: bold;
 }
 
 .rv-spinner {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #28a745;
-  border-radius: 50%;
-  width: 20px;
-  height: 20px;
-  animation: spin 1s linear infinite;
-  margin: 10px auto;
+    border: 4px solid #f0f0f0; /* Lighter base color for spinner */
+    border-top: 4px solid #4CAF50; /* Brighter green for spinner top */
+    border-radius: 50%;
+    width: 25px; /* Slightly larger spinner */
+    height: 25px;
+    animation: spin 1s linear infinite;
+    margin: 15px auto; /* More margin */
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .rv-result {
-  margin-top: 25px;
-  background: #d4edda;
-  padding: 15px;
-  border: 5px solid #ff0000;
-  min-height: 150px;
-  font-size: 16px;
-  white-space: pre-wrap;
-  color: #000;
+    margin-top: 30px; /* More space above result */
+    background: #E8F5E9; /* Very pale green background for recipe result */
+    padding: 20px; /* More padding */
+    border: 2px solid #81C784; /* Softer, lighter green border */
+    min-height: 180px; /* Taller min-height for more content */
+    font-size: 17px; /* Slightly larger font size for readability */
+    white-space: pre-wrap;
+    color: #1A1A1A; /* Slightly darker text for contrast on light background */
+    line-height: 1.7; /* Improved line height for readability */
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05); /* Subtle inner shadow for depth */
+    border-radius: 8px;
 }
 
 .rv-share-section {
-  margin-top: 20px;
-  text-align: center;
+    margin-top: 25px; /* More space above */
+    text-align: center;
 }
 
 .rv-share-section button {
-  margin: 5px;
-  padding: 8px 15px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
+    margin: 8px; /* More margin around share buttons */
+    padding: 10px 18px;
+    background: #2196F3; /* Brighter, more vibrant blue for share buttons */
+    color: white;
+    border: none;
+    border-radius: 8px; /* More rounded */
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.rv-share-section button:hover {
+    background: #1976D2; /* Slightly darker blue on hover */
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+footer {
+    margin-top: 30px; /* More space above footer */
+    text-align: center;
+    color: #777; /* Slightly lighter gray for footer text */
+    font-size: 0.9rem;
+}
 footer {
   margin-top: 20px;
   text-align: center;
