@@ -3,13 +3,13 @@
   max-width: 700px;
   margin: 20px auto;
   padding: 20px;
-  background: #121212;
-  color: #eee;
+  background: #3c2f2f; /* deep dark brown */
+  color: #f5f0e6; /* warm cream */
   font-family: 'Courier New', Courier, monospace;
   border-radius: 12px;
   box-shadow:
-    0 0 12px rgba(255, 0, 128, 0.6),
-    inset 0 0 20px rgba(255, 0, 128, 0.2);
+    0 0 12px rgba(216, 125, 58, 0.6), /* amber glow */
+    inset 0 0 20px rgba(216, 125, 58, 0.2);
 }
 
 /* Headings */
@@ -17,23 +17,23 @@ h1, h2, h3 {
   font-family: 'Orbitron', sans-serif;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  color: #ff3a6e;
-  text-shadow: 0 0 8px #ff3a6e;
+  color: #c1440e; /* warm terracotta */
+  text-shadow: 0 0 8px #c1440e;
 }
 
 /* Buttons for ingredients */
 .ingredient-btn, .dietary-btn {
-  background: linear-gradient(145deg, #ff005c, #d40047);
+  background: linear-gradient(145deg, #c1440e, #8f320a); /* terracotta shades */
   border: none;
   border-radius: 8px;
-  color: white;
+  color: #f5f0e6; /* warm cream text */
   padding: 10px 14px;
   margin: 5px 6px;
   font-weight: 700;
   cursor: pointer;
   box-shadow:
-    0 4px 6px rgba(255, 0, 92, 0.6),
-    0 0 8px rgba(255, 0, 92, 0.8);
+    0 4px 6px rgba(193, 68, 14, 0.6),
+    0 0 8px rgba(193, 68, 14, 0.8);
   transition:
     background 0.25s ease,
     box-shadow 0.25s ease,
@@ -44,32 +44,32 @@ h1, h2, h3 {
 }
 
 .ingredient-btn.selected, .dietary-btn.selected {
-  background: linear-gradient(145deg, #7fff00, #32cd32);
+  background: linear-gradient(145deg, #58734e, #47603b); /* earthy olive green */
   box-shadow:
-    0 6px 10px rgba(50, 205, 50, 0.9),
-    0 0 12px rgba(50, 205, 50, 1);
-  color: #000;
+    0 6px 10px rgba(88, 115, 78, 0.9),
+    0 0 12px rgba(88, 115, 78, 1);
+  color: #f5f0e6;
   font-weight: 900;
 }
 
 .ingredient-btn:hover:not(:disabled), .dietary-btn:hover:not(:disabled) {
-  background: linear-gradient(145deg, #ff3399, #ff0066);
+  background: linear-gradient(145deg, #d87d3a, #b46b2d); /* warm amber hover */
   box-shadow:
-    0 6px 12px rgba(255, 0, 102, 1),
-    0 0 16px rgba(255, 0, 102, 1);
+    0 6px 12px rgba(216, 125, 58, 1),
+    0 0 16px rgba(216, 125, 58, 1);
   transform: scale(1.1);
 }
 
 .ingredient-btn:active:not(:disabled), .dietary-btn:active:not(:disabled) {
   transform: scale(0.95);
   box-shadow:
-    inset 0 2px 6px rgba(255, 255, 255, 0.2);
+    inset 0 2px 6px rgba(245, 240, 230, 0.2);
 }
 
 /* Disabled buttons */
 button:disabled {
-  background: #555;
-  color: #999;
+  background: #665b54;
+  color: #cfc8bc;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
@@ -79,35 +79,35 @@ button:disabled {
 .rv-input input[type="text"] {
   padding: 8px 12px;
   border-radius: 6px;
-  border: 2px solid #ff3a6e;
-  background: #1a1a1a;
-  color: #eee;
+  border: 2px solid #c1440e; /* terracotta border */
+  background: #4b423c; /* muted brown */
+  color: #f5f0e6;
   font-family: 'Courier New', monospace;
   font-weight: 600;
   width: 60%;
   margin-right: 10px;
-  box-shadow: 0 0 8px #ff3a6e inset;
+  box-shadow: 0 0 8px #c1440e inset;
   transition: border-color 0.3s ease;
 }
 
 .rv-input input[type="text"]:focus {
   outline: none;
-  border-color: #7fff00;
-  box-shadow: 0 0 10px #7fff00 inset;
+  border-color: #58734e; /* olive green focus */
+  box-shadow: 0 0 10px #58734e inset;
 }
 
 /* Add Food and action buttons */
 .rv-input button {
-  background: linear-gradient(145deg, #ff005c, #d40047);
+  background: linear-gradient(145deg, #c1440e, #8f320a);
   border: none;
   border-radius: 8px;
-  color: white;
+  color: #f5f0e6;
   padding: 9px 16px;
   font-weight: 700;
   cursor: pointer;
   box-shadow:
-    0 4px 6px rgba(255, 0, 92, 0.6),
-    0 0 8px rgba(255, 0, 92, 0.8);
+    0 4px 6px rgba(193, 68, 14, 0.6),
+    0 0 8px rgba(193, 68, 14, 0.8);
   transition:
     background 0.25s ease,
     box-shadow 0.25s ease,
@@ -118,17 +118,17 @@ button:disabled {
 }
 
 .rv-input button:hover:not(:disabled) {
-  background: linear-gradient(145deg, #ff3399, #ff0066);
+  background: linear-gradient(145deg, #d87d3a, #b46b2d);
   box-shadow:
-    0 6px 12px rgba(255, 0, 102, 1),
-    0 0 16px rgba(255, 0, 102, 1);
+    0 6px 12px rgba(216, 125, 58, 1),
+    0 0 16px rgba(216, 125, 58, 1);
   transform: scale(1.05);
 }
 
 .rv-input button:active:not(:disabled) {
   transform: scale(0.95);
   box-shadow:
-    inset 0 2px 6px rgba(255, 255, 255, 0.2);
+    inset 0 2px 6px rgba(245, 240, 230, 0.2);
 }
 
 /* Sliders */
@@ -137,71 +137,71 @@ button:disabled {
   font-family: 'Courier New', monospace;
   font-weight: 600;
   letter-spacing: 0.03em;
-  color: #eee;
+  color: #f5f0e6;
 }
 
 .rv-slider label span {
   font-weight: 900;
-  color: #7fff00;
+  color: #d87d3a;
 }
 
 /* Selected Ingredients Text */
 .rv-selected {
   margin: 12px 0;
   padding: 10px;
-  border: 2px solid #7fff00;
-  background: #1a1a1a;
+  border: 2px solid #58734e;
+  background: #4b423c;
   border-radius: 10px;
   font-family: 'Courier New', monospace;
   font-weight: 700;
-  color: #7fff00;
+  color: #a9b49a;
   user-select: none;
 }
 
 /* Error message */
 .rv-error {
   margin: 12px 0;
-  color: #ff4444;
+  color: #ff6b6b;
   font-weight: 700;
   font-family: 'Orbitron', sans-serif;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  text-shadow: 0 0 8px #ff4444;
+  text-shadow: 0 0 8px #ff6b6b;
 }
 
 /* Recipe result box */
 .rv-result {
   margin-top: 20px;
   padding: 18px;
-  background: #121212;
-  color: #eee;
+  background: #3c2f2f;
+  color: #f5f0e6;
   font-family: 'Courier New', monospace;
   font-size: 0.95rem;
   white-space: pre-wrap;
   border-radius: 12px;
   box-shadow:
-    inset 0 0 15px rgba(255, 0, 128, 0.7);
+    inset 0 0 15px rgba(216, 125, 58, 0.7);
 }
 
 /* Nutrition section highlight */
 .nutrition-section {
   margin-top: 18px;
   padding: 14px 18px;
-  background: #2c003e;
-  border: 2px solid #ff3a6e;
+  background: #4b423c;
+  border: 2px solid #c1440e;
   border-radius: 12px;
   box-shadow:
-    0 0 12px #ff3a6e;
+    0 0 12px #c1440e;
   font-family: 'Courier New', monospace;
-  color: #ff87b7;
+  color: #d87d3a;
   font-weight: 700;
   white-space: pre-wrap;
 }
 
 /* Share Section Buttons */
 .rv-share-section button {
-  background: linear-gradient(145deg, #7fff00, #32cd32);
-  color: #000;
+  background: linear-gradient(145deg, #58734e, #47603b);
+  color: #f5f0e6;
   border: none;
   border-radius: 10px;
   padding: 10px 14px;
@@ -211,8 +211,8 @@ button:disabled {
   font-family: 'Orbitron', sans-serif;
   text-transform: uppercase;
   box-shadow:
-    0 4px 6px rgba(50, 205, 50, 0.9),
-    0 0 10px rgba(50, 205, 50, 1);
+    0 4px 6px rgba(88, 115, 78, 0.9),
+    0 0 10px rgba(88, 115, 78, 1);
   transition: transform 0.15s ease;
   user-select: none;
 }
@@ -220,8 +220,8 @@ button:disabled {
 .rv-share-section button:hover {
   transform: scale(1.1);
   box-shadow:
-    0 6px 12px rgba(50, 205, 50, 1),
-    0 0 14px rgba(50, 205, 50, 1);
+    0 6px 12px rgba(88, 115, 78, 1),
+    0 0 14px rgba(88, 115, 78, 1);
 }
 
 .rv-share-section button:active {
@@ -240,4 +240,3 @@ button:disabled {
     margin-bottom: 10px;
   }
 }
-
