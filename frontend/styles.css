@@ -17,7 +17,7 @@ body {
 
 h1 {
   text-align: center;
-  color: #28a745;
+  color: #28a745; /* Green */
   margin-bottom: 30px;
 }
 
@@ -27,7 +27,7 @@ button {
   margin: 6px;
   border: none;
   border-radius: 8px;
-  background-color: #28a745;
+  background-color: #28a745; /* green */
   color: white;
   font-size: 16px;
   cursor: pointer;
@@ -35,7 +35,7 @@ button {
 }
 
 button:hover {
-  background-color: #218838;
+  background-color: #218838; /* darker green */
   transform: scale(1.05);
 }
 
@@ -49,24 +49,24 @@ button:active {
 }
 
 #rv-resetBtn:active {
-  background-color: #c82333;
+  background-color: #c82333; /* red */
 }
 
 /* Ingredient + Dietary Buttons */
 .ingredient-btn,
 .dietary-btn {
-  background-color: #6c757d;
+  background-color: #dc3545; /* red default */
   color: white;
 }
 
 .ingredient-btn:hover,
 .dietary-btn:hover {
-  background-color: #5a6268;
+  background-color: #b02a37; /* darker red */
 }
 
 /* Selected Ingredient Buttons */
 .ingredient-btn.selected {
-  background-color: #218838;
+  background-color: #28a745; /* green when selected */
   transform: scale(1.15);
   box-shadow: 0 0 10px #66ff66;
 }
@@ -81,7 +81,7 @@ button:active {
 
 /* Selected Dietary Preferences with popup flash */
 .dietary-btn.selected {
-  background-color: #218838;
+  background-color: #28a745; /* green */
   animation: popup 0.4s ease-in-out;
 }
 
@@ -96,13 +96,28 @@ button:active {
   max-height: 400px;
   overflow-y: auto;
   padding: 15px;
-  background: #d4edda;
-  border: 3px solid #28a745;
+  background: #d4edda; /* light green background */
+  border: 3px solid #28a745; /* green border */
   font-size: 16px;
   white-space: pre-wrap;
+  overflow-wrap: break-word;  /* wrap long words */
+  word-wrap: break-word;
   color: #000;
   border-radius: 8px;
   margin-top: 20px;
+}
+
+/* Highlight Nutrition info inside recipe */
+.rv-result .nutrition {
+  background-color: #c8e6c9;  /* lighter green */
+  border-left: 5px solid #2e7d32; /* dark green vertical bar */
+  padding: 10px 15px;
+  margin: 15px 0;
+  font-weight: 600;
+  color: #1b5e20;
+  border-radius: 4px;
+  font-size: 15px;
+  line-height: 1.4;
 }
 
 /* Responsive improvements */
