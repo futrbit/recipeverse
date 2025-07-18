@@ -113,10 +113,8 @@ const Cook: React.FC = () => {
       const data = await response.json();
       setCredits(data.credits !== undefined ? data.credits : credits);
 
-      // Highlight Nutrition Section inside recipe markdown:
       let finalRecipe = data.recipe_text || 'Error: No recipe generated.';
-      // Wrap the Nutrition section in a div for styling
-      finalRecipe = finalRecipe.replace(/(##\s*Nutrition[\s\S]*?)(?=##|$)/gi, (match) => {
+      finalRecipe = finalRecipe.replace(/(##\s*Nutrition[\s\S]*?)(?=##|$)/gi, (match: string) => {
         return `<div class="nutrition-section">${match}</div>`;
       });
 
