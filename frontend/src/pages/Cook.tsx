@@ -25,7 +25,6 @@ const Cook: React.FC = () => {
   const cuisines = ['Random', 'Italian', 'Mexican', 'Indian', 'Chinese', 'Mediterranean', 'Thai', 'French', 'Japanese'];
   const dietaryOptions = ['Vegan', 'Vegetarian', 'Gluten-Free', 'Dairy-Free', 'Keto', 'Paleo'];
 
-  // Fetch user info with token auth
   useEffect(() => {
     const fetchUserInfo = async () => {
       const idToken = localStorage.getItem('idToken');
@@ -39,7 +38,7 @@ const Cook: React.FC = () => {
         });
         if (!res.ok) throw new Error('Failed to fetch user info');
         const data = await res.json();
-        setUsername(data.name || 'User'); // note: backend uses "name"
+        setUsername(data.name || 'User');
         setCredits(data.credits);
       } catch (err) {
         console.error(err);
@@ -113,7 +112,15 @@ const Cook: React.FC = () => {
 
       const data = await response.json();
       setCredits(data.credits !== undefined ? data.credits : credits);
-      setRecipe(data.recipe_text || 'Error: No recipe generated.');
+
+      // Highlight Nutrition Section inside recipe markdown:
+      let finalRecipe = data.recipe_text || 'Error: No recipe generated.';
+      // Wrap the Nutrition section in a div for styling
+      finalRecipe = finalRecipe.replace(/(##\s*Nutrition[\s\S]*?)(?=##|$)/gi, (match) => {
+        return `<div class="nutrition-section">${match}</div>`;
+      });
+
+      setRecipe(finalRecipe);
     } catch (e) {
       console.error(e);
       setError('Error: Failed to generate recipe. Please try again.');
@@ -296,9 +303,8 @@ const Cook: React.FC = () => {
         className="rv-result"
         aria-live="polite"
         style={{ display: recipe ? 'block' : 'none' }}
-      >
-        <pre>{recipe || 'Your recipe will appear here...'}</pre>
-      </div>
+        dangerouslySetInnerHTML={{ __html: recipe }}
+      />
 
       {recipe && (
         <div className="rv-share-section">
