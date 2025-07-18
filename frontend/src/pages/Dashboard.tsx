@@ -1,75 +1,79 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { auth, signOutUser } from '../firebase';
+import Cook from './Cook';
+import { UserInfo } from '../types';
+
+const containerStyle: React.CSSProperties = {
+  padding: '2rem',
+  maxWidth: '1200px',
+  margin: '0 auto',
+};
+
+const btnStyle: React.CSSProperties = {
+  padding: '0.5rem 1rem',
+  margin: '0.5rem',
+  backgroundColor: '#4285F4',
+  color: 'white',
+  border: 'none',
+  borderRadius: '4px',
+  cursor: 'pointer',
+};
 
 const Dashboard: React.FC = () => {
-  const [ingredients, setIngredients] = useState("");
-  const [recipe, setRecipe] = useState("");
-  const [credits, setCredits] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
 
-  // Load credits on mount
   useEffect(() => {
-    const fetchCredits = async () => {
+    const fetchUserInfo = async () => {
+      const idToken = localStorage.getItem('idToken');
+      if (!idToken) {
+        navigate('/');
+        return;
+      }
       try {
-        const res = await axios.get("/api/user-credits");
-        setCredits(res.data.credits);
-      } catch (err) {
-        console.error("Failed to load credits", err);
+        const response = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/user-info`, {
+          headers: { Authorization: `Bearer ${idToken}` },
+        });
+        setUserInfo(response.data);
+      } catch (error) {
+        console.error('Error fetching user info:', error);
+        navigate('/');
       }
     };
 
-    fetchCredits();
-  }, []);
+    fetchUserInfo();
+  }, [navigate]);
 
-  const handleGenerate = async () => {
-    if (!ingredients.trim()) return;
-
-    setLoading(true);
+  const handleLogout = async () => {
     try {
-      const res = await axios.post("/api/generate-recipe", {
-        ingredients,
-      });
-      setRecipe(res.data.recipe);
-      setCredits((prev) => (prev !== null ? prev - 1 : null));
-    } catch (err) {
-      console.error("Error generating recipe", err);
-    } finally {
-      setLoading(false);
+      await signOutUser();
+      navigate('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
     }
   };
 
+  if (!userInfo) return <div>Loading...</div>;
+
   return (
-    <div className="min-h-screen bg-[#101010] text-white flex flex-col items-center justify-start py-12 px-4">
-      <h1 className="text-4xl font-bold mb-4 text-[#FF4ADC]">RecipeVerse Dashboard</h1>
-      <p className="text-lg mb-6">You have <span className="text-[#00FFB3] font-bold">{credits}</span> credits remaining</p>
-
-      <div className="w-full max-w-2xl mb-4">
-        <input
-          className="w-full p-4 rounded-lg border-2 border-[#FF4ADC] bg-black text-white placeholder-gray-400 text-lg"
-          placeholder="Enter ingredients or cravings (e.g. ‘chicken, lemon, garlic’)..."
-          value={ingredients}
-          onChange={(e) => setIngredients(e.target.value)}
-        />
-      </div>
-
-      <button
-        onClick={handleGenerate}
-        disabled={loading || credits === 0}
-        className="px-8 py-3 bg-[#FF4ADC] hover:bg-[#ff2dc2] text-black font-bold rounded-full mb-6 transition duration-200 shadow-md arcade-button"
-      >
-        {loading ? "Cooking..." : "Generate Recipe"}
+    <div style={containerStyle}>
+      <h1>Welcome, {userInfo.name}</h1>
+      <p>Credits: {userInfo.credits} | Subscription: {userInfo.subscription_status}</p>
+      <button style={btnStyle} onClick={handleLogout}>
+        Log Out
       </button>
-
-      {recipe && (
-        <div className="w-full max-w-2xl bg-[#1f1f1f] text-white p-6 rounded-xl mt-4 border border-[#00FFB3] shadow-lg whitespace-pre-line">
-          <h2 className="text-2xl mb-2 text-[#00FFB3] font-semibold">🍽️ Your Recipe:</h2>
-          <pre className="text-base font-mono">{recipe}</pre>
-        </div>
-      )}
-
-      <footer className="w-full text-center mt-16 text-sm text-gray-500 border-t border-[#333] pt-6">
-        &copy; {new Date().getFullYear()} RecipeVerse. Built with love and garlic.
-      </footer>
+      <nav>
+        <button style={btnStyle} onClick={() => navigate('/dashboard')}>
+          Generate Recipe
+        </button>
+        <button style={btnStyle} onClick={() => navigate('/cookbook')}>
+          Cookbook
+        </button>
+      </nav>
+      <h2>Generate a Recipe</h2>
+      <Cook />
     </div>
   );
 };
