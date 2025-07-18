@@ -24,6 +24,19 @@ const buttonStyle: React.CSSProperties = {
   marginTop: '2rem',
 };
 
+const logoStyle: React.CSSProperties = {
+  width: '140px',
+  marginBottom: '1.5rem',
+};
+
+const tagLineStyle: React.CSSProperties = {
+  fontFamily: "'Press Start 2P', cursive",
+  fontSize: '0.75rem',
+  color: '#555',
+  marginTop: '1rem',
+  lineHeight: '1.8',
+};
+
 const Landing: React.FC = () => {
   const navigate = useNavigate();
 
@@ -39,8 +52,14 @@ const Landing: React.FC = () => {
 
   return (
     <div style={containerStyle}>
-      <h1>Welcome to RecipeVerse</h1>
-      <p>Craft personalized recipes with AI. Click below to log in with Google and get started.</p>
+      <img src="/static/logo.png" alt="RecipeVerse Logo" style={logoStyle} />
+      <h1>Welcome to <span style={{ color: '#218838' }}>RecipeVerse</span></h1>
+      
+      <p style={tagLineStyle}>
+        Craft personalized recipes with AI.<br />
+        Press Start to begin your flavour quest.
+      </p>
+
       <button style={buttonStyle} onClick={handleGoogleLogin}>
         Sign in with Google
       </button>
