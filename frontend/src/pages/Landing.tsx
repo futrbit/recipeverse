@@ -31,7 +31,7 @@ const logoStyle: React.CSSProperties = {
 
 const tagLineStyle: React.CSSProperties = {
   fontFamily: "'Press Start 2P', cursive",
-  fontSize: '0.75rem',
+  fontSize: '1.5rem',  // doubled font size here
   color: '#555',
   marginTop: '1rem',
   lineHeight: '1.8',
