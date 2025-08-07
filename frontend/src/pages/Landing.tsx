@@ -1,29 +1,31 @@
-// src/pages/Landing.tsx
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { login } from "../auth";
 
 const Landing: React.FC = () => {
-  const navigate = useNavigate();
-
-  const handleLogin = () => {
-    navigate("/login");
+  const handleLogin = async () => {
+    try {
+      await login(); // your existing login function
+    } catch (error) {
+      console.error("Login error:", error);
+    }
   };
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", color: "#333", backgroundColor: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+    <div style={{ fontFamily: "sans-serif", backgroundColor: "#fff", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
+      
       {/* Header */}
-      <header style={{ padding: "20px", backgroundColor: "#ff6347", color: "#fff", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0, fontSize: "28px" }}>🍲 RecipeVerse</h1>
+      <header style={{ padding: "1rem 2rem", backgroundColor: "#ff7043", color: "#fff", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>RecipeVerse</div>
         <button
           onClick={handleLogin}
           style={{
+            padding: "0.5rem 1rem",
             backgroundColor: "#fff",
-            color: "#ff6347",
-            border: "2px solid #fff",
-            padding: "10px 20px",
-            borderRadius: "6px",
-            fontWeight: "bold",
+            color: "#ff7043",
+            border: "none",
+            borderRadius: "4px",
             cursor: "pointer",
+            fontWeight: "bold",
           }}
         >
           Log In
@@ -31,31 +33,40 @@ const Landing: React.FC = () => {
       </header>
 
       {/* Hero Section */}
-      <section style={{ flex: 1, padding: "60px 20px", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", background: "linear-gradient(135deg, #ffe8e0, #ffffff)" }}>
-        <h2 style={{ fontSize: "40px", marginBottom: "20px", color: "#222" }}>Welcome to RecipeVerse</h2>
-        <p style={{ fontSize: "20px", maxWidth: "600px", marginBottom: "40px", color: "#444" }}>
-          Discover, save, and share your favorite recipes from around the world. Whether you're a home cook or a kitchen wizard, RecipeVerse is your go-to destination for culinary inspiration.
+      <main style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "2rem", textAlign: "center" }}>
+        {/* Logo */}
+        <div style={{ marginBottom: "2rem" }}>
+          {/* Replace with <img src="/logo.png" ... /> once logo is available */}
+          <div style={{ fontSize: "3rem", fontWeight: "bold", color: "#ff7043" }}>🍲</div>
+        </div>
+
+        {/* Hero Text */}
+        <h1 style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>Welcome to RecipeVerse</h1>
+        <p style={{ fontSize: "1.2rem", maxWidth: "600px", marginBottom: "2rem" }}>
+          Your collaborative recipe universe. Share, explore, and save your favourite dishes from every cuisine.
         </p>
+
+        {/* Log In Button (repeated for UX) */}
         <button
           onClick={handleLogin}
           style={{
-            backgroundColor: "#ff6347",
+            padding: "0.75rem 1.5rem",
+            backgroundColor: "#ff7043",
             color: "#fff",
             border: "none",
-            padding: "14px 28px",
-            borderRadius: "6px",
-            fontSize: "18px",
+            borderRadius: "8px",
+            fontSize: "1rem",
             fontWeight: "bold",
             cursor: "pointer",
           }}
         >
-          Get Cooking
+          Log In to Start Cooking
         </button>
-      </section>
+      </main>
 
       {/* Footer */}
-      <footer style={{ backgroundColor: "#f4f4f4", padding: "20px", textAlign: "center", color: "#777", fontSize: "14px" }}>
-        © 2025 RecipeVerse. All rights reserved.
+      <footer style={{ padding: "1rem", backgroundColor: "#f2f2f2", textAlign: "center", fontSize: "0.9rem" }}>
+        © {new Date().getFullYear()} RecipeVerse. Made with love for foodies.
       </footer>
     </div>
   );
