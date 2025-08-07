@@ -207,42 +207,44 @@ const Landing: React.FC = () => {
         Made with ❤️ by RecipeVerse &copy; {new Date().getFullYear()}
       </footer>
 
-      {/* Inline Keyframes for Animations */}
-      <style jsx>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @media (max-width: 768px) {
-          header {
-            flex-direction: column;
-            gap: 1rem;
-            padding: 1rem;
+      {/* Inline Keyframes */}
+      <style>
+        {`
+          @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
-          nav {
-            flex-direction: column;
-            gap: 0.5rem;
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
           }
-          section {
-            height: auto;
-            padding: 1rem;
+          @media (max-width: 768px) {
+            header {
+              flex-direction: column;
+              gap: 1rem;
+              padding: 1rem;
+            }
+            nav {
+              flex-direction: column;
+              gap: 0.5rem;
+            }
+            section {
+              height: auto;
+              padding: 1rem;
+            }
+            h1 {
+              font-size: 2rem !important;
+            }
+            p {
+              font-size: 1rem !important;
+            }
+            button {
+              padding: 0.8rem 1.5rem !important;
+              font-size: 1rem !important;
+            }
           }
-          h1 {
-            font-size: 2rem !important;
-          }
-          p {
-            font-size: 1rem !important;
-          }
-          button {
-            padding: 0.8rem 1.5rem !important;
-            font-size: 1rem !important;
-          }
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
