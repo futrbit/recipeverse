@@ -1,63 +1,49 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import "../styles/Landing.css"; // Make sure this exists or comment this out
 
-export default function Landing() {
+const Landing: React.FC = () => {
   const navigate = useNavigate();
 
-  const handleLogin = () => {
+  const handleLoginClick = () => {
     navigate("/login");
   };
 
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", backgroundColor: "#f9f9f9" }}>
-      {/* Hero Section */}
-      <section
-        style={{
-          background: "linear-gradient(to right, #1a73e8, #4285f4)",
-          color: "white",
-          padding: "60px 20px",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ fontSize: "3rem", marginBottom: "20px" }}>
-          Welcome to CryptoVault Chat
-        </h1>
-        <p style={{ fontSize: "1.2rem", maxWidth: "700px", margin: "0 auto" }}>
-          Secure, decentralized, wallet-based messaging. Your privacy is our
-          priority.
+    <div className="landing-container">
+      <header className="landing-header">
+        <h1 className="landing-title">Welcome to Recipeverse</h1>
+        <p className="landing-subtitle">
+          Discover, save, and share your favorite recipes in one delicious universe.
         </p>
-        <button
-          onClick={handleLogin}
-          style={{
-            marginTop: "30px",
-            padding: "12px 24px",
-            fontSize: "1.1rem",
-            backgroundColor: "#ffcc00",
-            color: "#333",
-            border: "none",
-            borderRadius: "6px",
-            cursor: "pointer",
-          }}
-        >
-          Log In with Wallet
+        <button className="login-button" onClick={handleLoginClick}>
+          Log In
         </button>
+      </header>
+
+      <section className="hero-section">
+        <div className="hero-content">
+          <h2>Why Recipeverse?</h2>
+          <p>
+            Tired of scattered recipe notes, screenshots, and half-baked meal plans?
+            Recipeverse brings everything together – smart, searchable, and social.
+          </p>
+          <ul>
+            <li>🍳 Create and categorize your personal recipe vault</li>
+            <li>🌍 Explore global dishes shared by food lovers</li>
+            <li>🧠 AI-powered suggestions and smart cooking tips</li>
+          </ul>
+        </div>
+        <div className="hero-image">
+          <img src="/images/recipeverse-hero.jpg" alt="Delicious food collage" />
+        </div>
       </section>
 
-      {/* Info Section */}
-      <section
-        style={{
-          padding: "40px 20px",
-          backgroundColor: "white",
-          textAlign: "center",
-        }}
-      >
-        <h2>Why CryptoVault?</h2>
-        <p style={{ maxWidth: "800px", margin: "20px auto", fontSize: "1rem" }}>
-          Chat with friends, discover new communities, and tip creators — all
-          while keeping your data secure on the blockchain. No ads, no tracking,
-          just pure encrypted communication.
-        </p>
-      </section>
+      <footer className="landing-footer">
+        <p>Built with ❤️ for foodies everywhere. Join the Recipeverse.</p>
+      </footer>
     </div>
   );
-}
+};
+
+export default Landing;
