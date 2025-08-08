@@ -1,28 +1,32 @@
 /* frontend/src/styles/style.css */
 body {
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #000000; /* Black background */
+  background-color: #000000;
   margin: 0;
   padding: 0;
-  color: #ffffff; /* White text */
+  color: #ffffff;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
-  max-width: 1200px; /* Matches Dashboard.tsx */
+  max-width: 1200px;
   margin: 20px auto;
   padding: 20px;
-  background-color: #000000; /* Black */
+  background-color: #000000;
   border-radius: 10px;
 }
 
 h1 {
   text-align: center;
-  color: #28a745; /* Green */
+  color: #28a745;
   margin-bottom: 20px;
   font-size: 2.5rem;
   font-weight: 700;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 h2 {
@@ -31,6 +35,10 @@ h2 {
   margin-bottom: 15px;
   font-size: 2rem;
   font-weight: 600;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 p {
@@ -38,6 +46,10 @@ p {
   color: #ffffff;
   line-height: 1.6;
   text-align: center;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
 a {
@@ -46,10 +58,9 @@ a {
 }
 
 a:hover {
-  color: #218838; /* Darker green */
+  color: #218838;
 }
 
-/* Buttons for Google, navigation, ingredients, and dietary */
 button, .button, .ingredient-btn, .dietary-btn {
   padding: 1rem 2rem;
   margin: 6px;
@@ -61,10 +72,12 @@ button, .button, .ingredient-btn, .dietary-btn {
   cursor: pointer;
   font-weight: 600;
   transition: background-color 0.3s ease, transform 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button:hover, .button:hover:not(:disabled), .ingredient-btn:hover:not(:disabled), .dietary-btn:hover:not(:disabled) {
-  background-color: #218838; /* Darker green */
+  background-color: #218838;
   transform: scale(1.05);
 }
 
@@ -73,11 +86,34 @@ button:active, .button:active:not(:disabled), .ingredient-btn:active:not(:disabl
 }
 
 button.selected, .ingredient-btn.selected, .dietary-btn.selected {
-  background-color: #28a745; /* Green for selected */
+  background-color: #28a745;
   transform: scale(1.1);
 }
 
-/* Disabled buttons */
+.primary-button {
+  padding: 1rem 2rem;
+  margin: 6px;
+  border: none;
+  border-radius: 8px;
+  background-color: #28a745; /* Always green */
+  color: #ffffff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.primary-button:hover:not(:disabled) {
+  background-color: #218838; /* Darker green */
+  transform: scale(1.05);
+}
+
+.primary-button:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
 button:disabled {
   background-color: #555555;
   color: #aaaaaa;
@@ -85,7 +121,6 @@ button:disabled {
   transform: none;
 }
 
-/* Input fields and select */
 .rv-input input[type="text"], select {
   padding: 10px 15px;
   border-radius: 6px;
@@ -95,6 +130,8 @@ button:disabled {
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 500;
   margin: 6px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .rv-input input[type="text"]:focus, select:focus {
@@ -102,13 +139,11 @@ button:disabled {
   border-color: #218838;
 }
 
-/* Sliders */
 .rv-slider input[type="range"] {
   margin: 10px 0;
   accent-color: #28a745;
 }
 
-/* Recipe result box */
 .rv-result {
   max-height: 400px;
   overflow-y: auto;
@@ -121,9 +156,12 @@ button:disabled {
   color: #ffffff;
   border-radius: 8px;
   margin-top: 20px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  backface-visibility: hidden;
+  transform: translateZ(0);
 }
 
-/* Nutrition section highlight */
 .nutrition-section {
   background-color: #000000;
   border-left: 5px solid #28a745;
@@ -134,9 +172,10 @@ button:disabled {
   border-radius: 4px;
   font-size: 15px;
   line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Share section buttons */
 .rv-share-section button {
   background-color: #28a745;
   color: #ffffff;
@@ -144,7 +183,6 @@ button:disabled {
   margin-right: 10px;
 }
 
-/* Responsive tweaks */
 @media (max-width: 768px) {
   .container {
     padding: 15px;
@@ -156,7 +194,7 @@ button:disabled {
   h2 {
     font-size: 1.6rem;
   }
-  button, .button, .ingredient-btn, .dietary-btn {
+  button, .button, .ingredient-btn, .dietary-btn, .primary-button {
     width: 100%;
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
