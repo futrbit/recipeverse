@@ -10,7 +10,7 @@ body {
 }
 
 .container {
-  max-width: 1000px;
+  max-width: 1200px; /* Matches Dashboard.tsx */
   margin: 20px auto;
   padding: 20px;
   background-color: #000000; /* Black */
@@ -40,13 +40,22 @@ p {
   text-align: center;
 }
 
+a {
+  color: #28a745;
+  text-decoration: underline;
+}
+
+a:hover {
+  color: #218838; /* Darker green */
+}
+
 /* Buttons for Google, navigation, ingredients, and dietary */
 button, .button, .ingredient-btn, .dietary-btn {
   padding: 1rem 2rem;
   margin: 6px;
   border: none;
   border-radius: 8px;
-  background-color: #28a745;
+  background-color: #333333; /* Neutral for unselected */
   color: #ffffff;
   font-size: 1.2rem;
   cursor: pointer;
@@ -63,8 +72,8 @@ button:active, .button:active:not(:disabled), .ingredient-btn:active:not(:disabl
   transform: scale(0.96);
 }
 
-.ingredient-btn.selected, .dietary-btn.selected {
-  background-color: #28a745;
+button.selected, .ingredient-btn.selected, .dietary-btn.selected {
+  background-color: #28a745; /* Green for selected */
   transform: scale(1.1);
 }
 
@@ -76,8 +85,8 @@ button:disabled {
   transform: none;
 }
 
-/* Input fields */
-.rv-input input[type="text"] {
+/* Input fields and select */
+.rv-input input[type="text"], select {
   padding: 10px 15px;
   border-radius: 6px;
   border: 2px solid #28a745;
@@ -85,13 +94,18 @@ button:disabled {
   color: #ffffff;
   font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   font-weight: 500;
-  width: 60%;
-  margin-right: 10px;
+  margin: 6px;
 }
 
-.rv-input input[type="text"]:focus {
+.rv-input input[type="text"]:focus, select:focus {
   outline: none;
   border-color: #218838;
+}
+
+/* Sliders */
+.rv-slider input[type="range"] {
+  margin: 10px 0;
+  accent-color: #28a745;
 }
 
 /* Recipe result box */
@@ -147,7 +161,7 @@ button:disabled {
     padding: 0.8rem 1.5rem;
     font-size: 1rem;
   }
-  .rv-input input[type="text"] {
+  .rv-input input[type="text"], select {
     width: 100%;
     margin-bottom: 10px;
   }
