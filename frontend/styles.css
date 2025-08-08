@@ -32,13 +32,13 @@ h2 {
 
 /* Button Styling */
 button {
-  padding: 12px 20px;
+  padding: 1rem 2rem; /* Larger padding */
   margin: 6px;
   border: none;
   border-radius: 8px;
   background-color: #28a745; /* Green */
   color: white;
-  font-size: 16px;
+  font-size: 1.2rem; /* Larger font */
   cursor: pointer;
   transition: transform 0.2s ease, background-color 0.2s ease;
 }
@@ -76,14 +76,12 @@ button:active {
 .ingredient-btn.selected {
   background-color: #28a745; /* Green */
   transform: scale(1.15);
-  box-shadow: 0 0 10px #66ff66;
 }
 
 /* Meat sizzle effect */
 .ingredient-btn.selected.meat {
   background: linear-gradient(to right, #ff4e00, #ec9f05);
   color: white;
-  box-shadow: 0 0 15px #ff9900;
   transform: scale(1.2);
 }
 
@@ -138,7 +136,7 @@ button:active {
   button {
     width: 100%;
     margin: 6px 0;
-    padding: 10px;
-    font-size: 14px;
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
   }
 }

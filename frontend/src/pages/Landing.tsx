@@ -52,7 +52,6 @@ const Landing: React.FC = () => {
         justifyContent: 'center',
         textAlign: 'center',
         position: 'relative',
-        backgroundColor: '#1a1a1a',
       }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1 }}></div>
         <div className="container" style={{ position: 'relative', zIndex: 2, background: 'transparent' }}>
