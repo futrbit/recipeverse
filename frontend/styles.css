@@ -1,24 +1,33 @@
+/* frontend/src/styles/main.css */
 body {
-  font-family: 'Segoe UI', sans-serif;
-  background-color: #f4f4f4;
+  font-family: 'Roboto', sans-serif; /* Clear, sharp font */
+  background-color: #000000; /* Black background */
   margin: 0;
   padding: 0;
-  color: #333;
+  color: #ffffff; /* White text for contrast */
 }
 
 .container {
   max-width: 900px;
-  margin: 40px auto;
+  margin: 20px auto;
   padding: 20px;
-  background-color: #fff;
+  background-color: #1a1a1a; /* Dark gray for contrast */
   border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3); /* Subtle shadow */
 }
 
 h1 {
   text-align: center;
   color: #28a745; /* Green */
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  font-size: 2.2rem;
+}
+
+h2 {
+  color: #28a745; /* Green */
+  text-align: center;
+  font-size: 1.6rem;
+  margin-bottom: 15px;
 }
 
 /* Button Styling */
@@ -27,7 +36,7 @@ button {
   margin: 6px;
   border: none;
   border-radius: 8px;
-  background-color: #28a745; /* green */
+  background-color: #28a745; /* Green */
   color: white;
   font-size: 16px;
   cursor: pointer;
@@ -35,7 +44,7 @@ button {
 }
 
 button:hover {
-  background-color: #218838; /* darker green */
+  background-color: #218838; /* Darker green */
   transform: scale(1.05);
 }
 
@@ -49,24 +58,24 @@ button:active {
 }
 
 #rv-resetBtn:active {
-  background-color: #c82333; /* red */
+  background-color: #c82333; /* Red */
 }
 
 /* Ingredient + Dietary Buttons */
 .ingredient-btn,
 .dietary-btn {
-  background-color: #dc3545; /* red default */
+  background-color: #dc3545; /* Red default */
   color: white;
 }
 
 .ingredient-btn:hover,
 .dietary-btn:hover {
-  background-color: #b02a37; /* darker red */
+  background-color: #b02a37; /* Darker red */
 }
 
 /* Selected Ingredient Buttons */
 .ingredient-btn.selected {
-  background-color: #28a745; /* green when selected */
+  background-color: #28a745; /* Green when selected */
   transform: scale(1.15);
   box-shadow: 0 0 10px #66ff66;
 }
@@ -81,7 +90,7 @@ button:active {
 
 /* Selected Dietary Preferences with popup flash */
 .dietary-btn.selected {
-  background-color: #28a745; /* green */
+  background-color: #28a745; /* Green */
   animation: popup 0.4s ease-in-out;
 }
 
@@ -96,25 +105,25 @@ button:active {
   max-height: 400px;
   overflow-y: auto;
   padding: 15px;
-  background: #d4edda; /* light green background */
-  border: 3px solid #28a745; /* green border */
+  background: #2a2a2a; /* Darker gray for contrast */
+  border: 3px solid #28a745; /* Green border */
   font-size: 16px;
   white-space: pre-wrap;
-  overflow-wrap: break-word;  /* wrap long words */
+  overflow-wrap: break-word;
   word-wrap: break-word;
-  color: #000;
+  color: #ffffff; /* White text */
   border-radius: 8px;
   margin-top: 20px;
 }
 
 /* Highlight Nutrition info inside recipe */
 .rv-result .nutrition {
-  background-color: #c8e6c9;  /* lighter green */
-  border-left: 5px solid #2e7d32; /* dark green vertical bar */
+  background-color: #3a3a3a; /* Slightly lighter gray */
+  border-left: 5px solid #28a745; /* Green vertical bar */
   padding: 10px 15px;
   margin: 15px 0;
   font-weight: 600;
-  color: #1b5e20;
+  color: #ffffff;
   border-radius: 4px;
   font-size: 15px;
   line-height: 1.4;
@@ -124,10 +133,21 @@ button:active {
 @media (max-width: 600px) {
   .container {
     padding: 15px;
+    margin: 10px auto;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
   }
 
   button {
     width: 100%;
     margin: 6px 0;
+    padding: 10px;
+    font-size: 14px;
   }
 }
