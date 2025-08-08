@@ -52,7 +52,7 @@ const Landing: React.FC = () => {
 
       <section className="container">
         <h2>Why RecipeVerse?</h2>
-        <p style={{ maxWidth: '800px', margin: '0 auto' }}>
+        <p>
           RecipeVerse harnesses AI to craft unique recipes tailored to your ingredients, dietary preferences, and taste. Whether you're reducing food waste or seeking culinary inspiration, we make cooking effortless and exciting.
         </p>
       </section>

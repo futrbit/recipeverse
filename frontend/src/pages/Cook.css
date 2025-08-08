@@ -1,14 +1,25 @@
+/* frontend/src/styles/cook.css */
+body {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #080000dc;
+  margin: 0;
+  padding: 0;
+  color: #f5f0e6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 /* Container */
 .rv-container {
   max-width: 700px;
   margin: 20px auto;
   padding: 20px;
-  background: #3c2f2f; /* deep dark brown */
-  color: #f5f0e6; /* warm cream */
+  background: #080000dc;
+  color: #f5f0e6;
   font-family: 'Courier New', Courier, monospace;
   border-radius: 12px;
   box-shadow:
-    0 0 12px rgba(216, 125, 58, 0.6), /* amber glow */
+    0 0 12px rgba(216, 125, 58, 0.6),
     inset 0 0 20px rgba(216, 125, 58, 0.2);
 }
 
@@ -17,16 +28,16 @@ h1, h2, h3 {
   font-family: 'Orbitron', sans-serif;
   text-transform: uppercase;
   letter-spacing: 1.5px;
-  color: #58734e; /* olive green */
+  color: #58734e;
   text-shadow: 0 0 8px #58734e;
 }
 
 /* Buttons for ingredients */
 .ingredient-btn, .dietary-btn {
-  background: linear-gradient(145deg, #58734e, #47603b); /* olive green shades */
+  background: linear-gradient(145deg, #58734e, #47603b);
   border: none;
   border-radius: 8px;
-  color: #f5f0e6; /* warm cream text */
+  color: #f5f0e6;
   padding: 10px 14px;
   margin: 5px 6px;
   font-weight: 700;
@@ -44,7 +55,7 @@ h1, h2, h3 {
 }
 
 .ingredient-btn.selected, .dietary-btn.selected {
-  background: linear-gradient(145deg, #c1440e, #8f320a); /* terracotta red */
+  background: linear-gradient(145deg, #c1440e, #8f320a);
   box-shadow:
     0 6px 10px rgba(193, 68, 14, 0.9),
     0 0 12px rgba(193, 68, 14, 1);
@@ -53,7 +64,7 @@ h1, h2, h3 {
 }
 
 .ingredient-btn:hover:not(:disabled), .dietary-btn:hover:not(:disabled) {
-  background: linear-gradient(145deg, #d87d3a, #b46b2d); /* warm amber hover */
+  background: linear-gradient(145deg, #d87d3a, #b46b2d);
   box-shadow:
     0 6px 12px rgba(216, 125, 58, 1),
     0 0 16px rgba(216, 125, 58, 1);
@@ -79,8 +90,8 @@ button:disabled {
 .rv-input input[type="text"] {
   padding: 8px 12px;
   border-radius: 6px;
-  border: 2px solid #58734e; /* olive green border */
-  background: #4b423c; /* muted brown */
+  border: 2px solid #58734e;
+  background: #4b423c;
   color: #f5f0e6;
   font-family: 'Courier New', monospace;
   font-weight: 600;
@@ -92,7 +103,7 @@ button:disabled {
 
 .rv-input input[type="text"]:focus {
   outline: none;
-  border-color: #c1440e; /* terracotta red focus */
+  border-color: #c1440e;
   box-shadow: 0 0 10px #c1440e inset;
 }
 
