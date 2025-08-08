@@ -66,7 +66,7 @@ button, .button, .ingredient-btn, .dietary-btn {
   margin: 6px;
   border: none;
   border-radius: 8px;
-  background-color: #333333; /* Neutral for unselected */
+  background-color: #333333;
   color: #ffffff;
   font-size: 1.2rem;
   cursor: pointer;
@@ -90,12 +90,12 @@ button.selected, .ingredient-btn.selected, .dietary-btn.selected {
   transform: scale(1.1);
 }
 
-.primary-button {
+button.primary-button {
   padding: 1rem 2rem;
   margin: 6px;
   border: none;
   border-radius: 8px;
-  background-color: #28a745; /* Always green */
+  background-color: #28a745 !important; /* Force green */
   color: #ffffff;
   font-size: 1.2rem;
   cursor: pointer;
@@ -105,12 +105,12 @@ button.selected, .ingredient-btn.selected, .dietary-btn.selected {
   -moz-osx-font-smoothing: grayscale;
 }
 
-.primary-button:hover:not(:disabled) {
-  background-color: #218838; /* Darker green */
+button.primary-button:hover:not(:disabled) {
+  background-color: #218838 !important;
   transform: scale(1.05);
 }
 
-.primary-button:active:not(:disabled) {
+button.primary-button:active:not(:disabled) {
   transform: scale(0.96);
 }
 
@@ -194,7 +194,7 @@ button:disabled {
   h2 {
     font-size: 1.6rem;
   }
-  button, .button, .ingredient-btn, .dietary-btn, .primary-button {
+  button, .button, .ingredient-btn, .dietary-btn, button.primary-button {
     width: 100%;
     padding: 0.8rem 1.5rem;
     font-size: 1rem;

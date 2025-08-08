@@ -18,9 +18,8 @@ const Landing: React.FC = () => {
 
   return (
     <div style={{ backgroundColor: '#000000', minHeight: '100vh' }}>
-      {/* Header */}
       <header style={{
-        background: '#1a1a1a',
+        background: '#000000',
         padding: '1rem 2rem',
         display: 'flex',
         justifyContent: 'space-between',
@@ -30,13 +29,8 @@ const Landing: React.FC = () => {
         zIndex: 10,
       }}>
         <img src="/static/logo.png" alt="RecipeVerse Logo" style={{ height: '50px' }} />
-        <nav style={{ display: 'flex', gap: '1rem' }}>
-          <button onClick={handleGoogleLogin}>Log In with Google</button>
-          <button onClick={handleGoogleLogin}>Sign Up with Google</button>
-        </nav>
       </header>
 
-      {/* Hero Section */}
       <section className="container" style={{
         background: `url('/static/hero.png') no-repeat center/cover`,
         minHeight: '70vh',
@@ -46,30 +40,28 @@ const Landing: React.FC = () => {
         textAlign: 'center',
         position: 'relative',
       }}>
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', zIndex: 1 }}></div>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', zIndex: 1 }}></div>
         <div className="container" style={{ position: 'relative', zIndex: 2, background: 'transparent' }}>
           <h1>Discover Your Next Meal with <span style={{ color: '#28a745' }}>RecipeVerse</span></h1>
           <p style={{ fontSize: '1.2rem', color: '#ffffff', marginBottom: '1.5rem', maxWidth: '600px', margin: '0 auto' }}>
-            Transform your ingredients into personalized recipes with AI.
+            Transform your ingredients into personalized recipes with AI. Start your culinary adventure today!
           </p>
-          <button onClick={handleGoogleLogin}>Get Started with Google</button>
+          <button className="primary-button" onClick={handleGoogleLogin}>Get Started with Google</button>
         </div>
       </section>
 
-      {/* About Section */}
       <section className="container">
         <h2>Why RecipeVerse?</h2>
-        <p style={{ fontSize: '1.1rem', color: '#ffffff', lineHeight: 1.6, maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-          RecipeVerse uses AI to create recipes tailored to your ingredients and preferences. Cooking made easy and exciting.
+        <p style={{ maxWidth: '800px', margin: '0 auto' }}>
+          RecipeVerse harnesses AI to craft unique recipes tailored to your ingredients, dietary preferences, and taste. Whether you're reducing food waste or seeking culinary inspiration, we make cooking effortless and exciting.
         </p>
       </section>
 
-      {/* Footer */}
       <footer style={{
-        background: '#1a1a1a',
+        background: '#000000',
         padding: '1rem',
         textAlign: 'center',
-        color: '#28a745',
+        color: '#ffffff',
         fontSize: '0.9rem',
         width: '100%',
       }}>
