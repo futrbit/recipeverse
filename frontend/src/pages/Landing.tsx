@@ -31,15 +31,8 @@ const Landing: React.FC = () => {
       }}>
         <img src="/static/logo.png" alt="RecipeVerse Logo" style={{ height: '50px' }} />
         <nav style={{ display: 'flex', gap: '1rem' }}>
-          <a href="/" style={{ color: '#28a745', textDecoration: 'none', fontSize: '1rem', fontWeight: 600 }}>
-            Home
-          </a>
-          <a href="http://localhost:5000/login" style={{ color: '#28a745', textDecoration: 'none', fontSize: '1rem', fontWeight: 600 }}>
-            Log In
-          </a>
-          <a href="http://localhost:5000/signup" style={{ color: '#28a745', textDecoration: 'none', fontSize: '1rem', fontWeight: 600 }}>
-            Sign Up
-          </a>
+          <button onClick={handleGoogleLogin}>Log In with Google</button>
+          <button onClick={handleGoogleLogin}>Sign Up with Google</button>
         </nav>
       </header>
 
